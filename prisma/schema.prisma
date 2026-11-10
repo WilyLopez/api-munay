@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["munay"]
+}
+
+enum RolUsuario {
+  SUPER_ADMIN
+  ADMIN_DESTINO
+  TURISTA
+
+  @@map("rol_usuario")
+  @@schema("munay")
+}
+
+enum CategoriaDestino {
+  HISTORIA
+  CULTURA
+  NATURALEZA
+  PLAYAS
+
+  @@map("categoria_destino")
+  @@schema("munay")
+}
+
+enum ProvinciaDestino {
+  CHICLAYO
+  LAMBAYEQUE
+  FERRENAFE
+
+  @@map("provincia_destino")
+  @@schema("munay")
+}
+
+model Usuario {
+  id                    String                 @id @db.Uuid
+  nombreCompleto        String                 @map("nombre_completo")
+  rol                   RolUsuario             @default(TURISTA)
+  activo                Boolean                @default(true)
+  creadoEn              DateTime               @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn         DateTime               @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+  destinosAdministrados AdministradorDestino[]
+  favoritos             Favorito[]
+  sesiones              SesionUsuario[]
+
+  @@map("usuarios")
+  @@schema("munay")
+}
+
+model SesionUsuario {
+  id                String    @id @db.Uuid
+  usuarioId         String    @map("usuario_id") @db.Uuid
+  ultimaActividadEn DateTime  @default(now()) @map("ultima_actividad_en") @db.Timestamptz(3)
+  revocadaEn        DateTime? @map("revocada_en") @db.Timestamptz(3)
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("sesiones_usuarios")
+  @@schema("munay")
+}
+
+model Destino {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  nombre               String
+  descripcion          String
+  ubicacion            String
+  categoria            CategoriaDestino
+  provincia            ProvinciaDestino
+  latitud              Float
+  longitud             Float
+  imagenUrl            String?                @map("imagen_url")
+  horario              String?
+  tarifaGeneral        Decimal?               @map("tarifa_general") @db.Decimal(10, 2)
+  tarifaEstudiantes    Decimal?               @map("tarifa_estudiantes") @db.Decimal(10, 2)
+  calificacionPromedio Decimal?               @map("calificacion_promedio") @db.Decimal(3, 2)
+  verificado           Boolean                @default(false)
+  creadoEn             DateTime               @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn        DateTime               @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+  administradores      AdministradorDestino[]
+  favoritos            Favorito[]
+
+  @@index([provincia, categoria])
+  @@index([categoria])
+  @@map("destinos")
+  @@schema("munay")
+}
+
+model AdministradorDestino {
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  destinoId  String   @map("destino_id") @db.Uuid
+  asignadoEn DateTime @default(now()) @map("asignado_en") @db.Timestamptz(3)
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  destino    Destino  @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, destinoId])
+  @@index([destinoId])
+  @@map("administradores_destinos")
+  @@schema("munay")
+}
+
+model Favorito {
+  usuarioId String   @map("usuario_id") @db.Uuid
+  destinoId String   @map("destino_id") @db.Uuid
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  destino   Destino  @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, destinoId])
+  @@index([destinoId])
+  @@map("favoritos")
+  @@schema("munay")
+}
