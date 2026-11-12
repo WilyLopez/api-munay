@@ -40,6 +40,12 @@ Configura `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` con el proyecto de Supabas
 
 Munay invalida el acceso tras 30 minutos sin solicitudes autenticadas y revoca la sesión de la aplicación al cerrar sesión. Los permisos del usuario se consultan en el perfil de Munay.
 
+## Catálogo de destinos
+
+`GET /destinos` permite consultar el catálogo público. Cuando recibe un token válido, incluye la sesión y el estado de los favoritos de esa cuenta. Los métodos `PUT` y `DELETE` de `/destinos/:id/favorito` requieren una sesión activa.
+
+Para cargar los destinos iniciales en la base configurada mediante `DIRECT_URL`, aplica primero las migraciones y ejecuta `npm exec -- prisma db execute --file prisma/datos/destinos-iniciales.sql`. El script se puede repetir sin duplicar sus destinos ni reemplazar registros existentes.
+
 ## Verificación
 
 ```sh

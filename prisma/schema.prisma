@@ -46,6 +46,7 @@ model Usuario {
   destinosAdministrados AdministradorDestino[]
   favoritos             Favorito[]
   sesiones              SesionUsuario[]
+  visitas               VisitaVerificada[]
 
   @@map("usuarios")
   @@schema("munay")
@@ -65,6 +66,14 @@ model SesionUsuario {
 
 model Destino {
   id                   String                 @id @default(uuid()) @db.Uuid
+  slug                 String                 @unique
+  fotosAdicionales     String[]               @default([]) @map("fotos_adicionales")
+  diasAtencion         Int[]                  @default([]) @map("dias_atencion")
+  rutaDesdeChiclayo    String?                @map("ruta_desde_chiclayo")
+  distanciaKm          Int?                   @map("distancia_km")
+  duracionMinutos      Int?                   @map("duracion_minutos")
+  recomendacion        String?
+  fuenteRutaUrl        String?                @map("fuente_ruta_url")
   nombre               String
   descripcion          String
   ubicacion            String
@@ -82,6 +91,8 @@ model Destino {
   actualizadoEn        DateTime               @updatedAt @map("actualizado_en") @db.Timestamptz(3)
   administradores      AdministradorDestino[]
   favoritos            Favorito[]
+  codigosVisita        CodigoVisita[]
+  visitas              VisitaVerificada[]
 
   @@index([provincia, categoria])
   @@index([categoria])
@@ -112,5 +123,36 @@ model Favorito {
   @@id([usuarioId, destinoId])
   @@index([destinoId])
   @@map("favoritos")
+  @@schema("munay")
+}
+
+model CodigoVisita {
+  id        String            @id @default(uuid()) @db.Uuid
+  destinoId String            @map("destino_id") @db.Uuid
+  creadoEn  DateTime          @default(now()) @map("creado_en") @db.Timestamptz(3)
+  venceEn   DateTime          @map("vence_en") @db.Timestamptz(3)
+  anuladoEn DateTime?         @map("anulado_en") @db.Timestamptz(3)
+  usadoEn   DateTime?         @map("usado_en") @db.Timestamptz(3)
+  destino   Destino           @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+  visita    VisitaVerificada?
+
+  @@index([destinoId, creadoEn])
+  @@map("codigos_visita")
+  @@schema("munay")
+}
+
+model VisitaVerificada {
+  id           String       @id @default(uuid()) @db.Uuid
+  usuarioId    String       @map("usuario_id") @db.Uuid
+  destinoId    String       @map("destino_id") @db.Uuid
+  codigoId     String       @unique @map("codigo_id") @db.Uuid
+  verificadaEn DateTime     @default(now()) @map("verificada_en") @db.Timestamptz(3)
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  destino      Destino      @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+  codigo       CodigoVisita @relation(fields: [codigoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, destinoId])
+  @@index([destinoId, verificadaEn, id])
+  @@map("visitas_verificadas")
   @@schema("munay")
 }
