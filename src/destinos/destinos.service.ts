@@ -6,6 +6,7 @@ function seleccionarDestino(usuarioId?: string) {
   return {
     id: true,
     slug: true,
+    ordenPortada: true,
     nombre: true,
     descripcion: true,
     ubicacion: true,

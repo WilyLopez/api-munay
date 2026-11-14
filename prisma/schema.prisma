@@ -69,6 +69,7 @@ model SesionUsuario {
 model Destino {
   id                   String                 @id @default(uuid()) @db.Uuid
   slug                 String                 @unique
+  ordenPortada         Int?                   @map("orden_portada")
   fotosAdicionales     String[]               @default([]) @map("fotos_adicionales")
   diasAtencion         Int[]                  @default([]) @map("dias_atencion")
   rutaDesdeChiclayo    String?                @map("ruta_desde_chiclayo")
