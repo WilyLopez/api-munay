@@ -137,6 +137,71 @@ export class VisitasService {
     };
   }
 
+  async estadisticas(perfil: Perfil, slug: string, meses: number) {
+    const destino = await this.obtenerDestinoAdministrado(perfil, slug);
+    const ahora = new Date();
+    const [anio, mes] = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Lima',
+    })
+      .format(ahora)
+      .split('-')
+      .map(Number);
+    const periodos = Array.from(
+      { length: meses },
+      (_, indice) => new Date(Date.UTC(anio, mes - meses + indice, 1, 5)),
+    );
+    const desde = periodos[0];
+    const cliente = this.prisma.cliente;
+    const [visitas, resumen, recientes] = await Promise.all([
+      cliente.$queryRaw<{ mes: string; total: number }[]>`
+        SELECT to_char("verificada_en" AT TIME ZONE 'America/Lima', 'YYYY-MM') AS mes,
+               count(*)::int AS total
+        FROM "munay"."visitas_verificadas"
+        WHERE "destino_id" = ${destino.id}::uuid AND "verificada_en" BETWEEN ${desde} AND ${ahora}
+        GROUP BY 1
+      `,
+      cliente.resena.aggregate({
+        where: { destinoId: destino.id, creadaEn: { gte: desde, lte: ahora } },
+        _avg: { calificacion: true },
+        _count: { _all: true },
+      }),
+      cliente.resena.findMany({
+        where: { destinoId: destino.id, creadaEn: { gte: desde, lte: ahora } },
+        select: {
+          id: true,
+          usuario: { select: { nombreCompleto: true } },
+          calificacion: true,
+          comentario: true,
+          creadaEn: true,
+          visitaId: true,
+        },
+        orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
+        take: 5,
+      }),
+    ]);
+    const tendencia = periodos.map((fecha) => {
+      const mes = fecha.toISOString().slice(0, 7);
+      return {
+        mes,
+        total: visitas.find((visita) => visita.mes === mes)?.total ?? 0,
+      };
+    });
+    return {
+      tendencia,
+      totalVisitas: tendencia.reduce(
+        (total, periodo) => total + periodo.total,
+        0,
+      ),
+      totalResenas: resumen._count._all,
+      promedio: resumen._avg.calificacion,
+      recientes: recientes.map(({ visitaId, ...resena }) => ({
+        ...resena,
+        verificada: Boolean(visitaId),
+      })),
+      actualizadoEn: ahora,
+    };
+  }
+
   async verificar(perfil: Perfil, texto: unknown, slug?: string) {
     if (perfil.rol !== 'TURISTA')
       throw new ForbiddenException(

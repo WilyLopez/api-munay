@@ -53,6 +53,21 @@ export class VisitasController {
     return this.visitas.historial(perfil, slug, Math.max(1, numero));
   }
 
+  @Get('administracion/:slug/estadisticas')
+  @Header('Cache-Control', 'private, no-store')
+  async estadisticas(
+    @Param('slug') slug: string,
+    @Query('meses') meses: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.visitas.estadisticas(
+      perfil,
+      slug,
+      meses === '12' ? 12 : meses === '3' ? 3 : 6,
+    );
+  }
+
   @Post('verificar')
   @HttpCode(200)
   async verificar(
