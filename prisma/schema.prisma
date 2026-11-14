@@ -47,6 +47,8 @@ model Usuario {
   favoritos             Favorito[]
   sesiones              SesionUsuario[]
   visitas               VisitaVerificada[]
+  resenas               Resena[]
+  votosResenas          VotoResena[]
 
   @@map("usuarios")
   @@schema("munay")
@@ -92,6 +94,7 @@ model Destino {
   administradores      AdministradorDestino[]
   favoritos            Favorito[]
   codigosVisita        CodigoVisita[]
+  resenas              Resena[]
   visitas              VisitaVerificada[]
 
   @@index([provincia, categoria])
@@ -150,9 +153,40 @@ model VisitaVerificada {
   usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   destino      Destino      @relation(fields: [destinoId], references: [id], onDelete: Cascade)
   codigo       CodigoVisita @relation(fields: [codigoId], references: [id], onDelete: Cascade)
+  resena       Resena?
 
   @@unique([usuarioId, destinoId])
   @@index([destinoId, verificadaEn, id])
   @@map("visitas_verificadas")
+  @@schema("munay")
+}
+
+model Resena {
+  id           String            @id @default(uuid()) @db.Uuid
+  usuarioId    String            @map("usuario_id") @db.Uuid
+  destinoId    String            @map("destino_id") @db.Uuid
+  visitaId     String?           @unique @map("visita_id") @db.Uuid
+  calificacion Int
+  comentario   String
+  creadaEn     DateTime          @default(now()) @map("creada_en") @db.Timestamptz(3)
+  usuario      Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  destino      Destino           @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+  visita       VisitaVerificada? @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+  votos        VotoResena[]
+
+  @@index([destinoId, creadaEn, id])
+  @@map("resenas")
+  @@schema("munay")
+}
+
+model VotoResena {
+  usuarioId String  @map("usuario_id") @db.Uuid
+  resenaId  String  @map("resena_id") @db.Uuid
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  resena    Resena  @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, resenaId])
+  @@index([resenaId])
+  @@map("votos_resenas")
   @@schema("munay")
 }
