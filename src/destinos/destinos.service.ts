@@ -63,6 +63,7 @@ export class DestinosService {
       where: { slug },
       select: {
         ...seleccionarDestino(usuarioId),
+        _count: { select: { resenas: true } },
         fotosAdicionales: true,
         diasAtencion: true,
         rutaDesdeChiclayo: true,
@@ -77,7 +78,8 @@ export class DestinosService {
       throw new NotFoundException('El destino no está disponible.');
     }
 
-    return serializarDestino(destino);
+    const { _count, ...detalle } = destino;
+    return { ...serializarDestino(detalle), totalResenas: _count.resenas };
   }
 
   async guardarFavorito(usuarioId: string, destinoId: string) {
