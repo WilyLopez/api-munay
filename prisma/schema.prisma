@@ -49,8 +49,22 @@ model Usuario {
   visitas               VisitaVerificada[]
   resenas               Resena[]
   votosResenas          VotoResena[]
+  movimientosPuntos     MovimientoPuntos[]
 
   @@map("usuarios")
+  @@schema("munay")
+}
+
+model AuditoriaUsuario {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String   @map("actor_id") @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  accion    String
+  cambios   Json
+  creadaEn  DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+
+  @@index([usuarioId, creadaEn])
+  @@map("auditorias_usuarios")
   @@schema("munay")
 }
 
@@ -163,20 +177,90 @@ model VisitaVerificada {
 }
 
 model Resena {
-  id           String            @id @default(uuid()) @db.Uuid
-  usuarioId    String            @map("usuario_id") @db.Uuid
-  destinoId    String            @map("destino_id") @db.Uuid
-  visitaId     String?           @unique @map("visita_id") @db.Uuid
-  calificacion Int
-  comentario   String
-  creadaEn     DateTime          @default(now()) @map("creada_en") @db.Timestamptz(3)
-  usuario      Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  destino      Destino           @relation(fields: [destinoId], references: [id], onDelete: Cascade)
-  visita       VisitaVerificada? @relation(fields: [visitaId], references: [id], onDelete: Cascade)
-  votos        VotoResena[]
+  id                String             @id @default(uuid()) @db.Uuid
+  usuarioId         String             @map("usuario_id") @db.Uuid
+  destinoId         String             @map("destino_id") @db.Uuid
+  visitaId          String?            @unique @map("visita_id") @db.Uuid
+  calificacion      Int
+  comentario        String
+  creadaEn          DateTime           @default(now()) @map("creada_en") @db.Timestamptz(3)
+  retiradaEn        DateTime?          @map("retirada_en") @db.Timestamptz(3)
+  sentimiento       SentimientoResena?
+  temas             String[]           @default([])
+  puntosPendientes  Boolean            @default(false) @map("puntos_pendientes")
+  usuario           Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  destino           Destino            @relation(fields: [destinoId], references: [id], onDelete: Cascade)
+  visita            VisitaVerificada?  @relation(fields: [visitaId], references: [id], onDelete: Cascade)
+  votos             VotoResena[]
+  reportes          ReporteResena[]
+  movimientosPuntos MovimientoPuntos[]
+  anclaje           AnclajeResena?
 
   @@index([destinoId, creadaEn, id])
   @@map("resenas")
+  @@schema("munay")
+}
+
+model AnclajeResena {
+  resenaId     String    @id @map("resena_id") @db.Uuid
+  huella       String    @unique
+  estado       String    @default("pendiente")
+  intentos     Int       @default(0)
+  contrato     String?
+  transaccion  String?
+  firmada      String?
+  bloque       String?
+  costoWei     String?   @map("costo_wei")
+  error        String?
+  creadoEn     DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  confirmadoEn DateTime? @map("confirmado_en") @db.Timestamptz(3)
+  resena       Resena    @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+
+  @@index([estado, creadoEn, resenaId])
+  @@map("anclajes_resenas")
+  @@schema("munay")
+}
+
+model MovimientoPuntos {
+  id        String   @id @default(uuid()) @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  resenaId  String   @map("resena_id") @db.Uuid
+  tipo      String
+  puntos    Int
+  creadoEn  DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  resena    Resena   @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+
+  @@unique([resenaId, tipo])
+  @@index([usuarioId])
+  @@map("movimientos_puntos")
+  @@schema("munay")
+}
+
+enum SentimientoResena {
+  POSITIVA
+  NEUTRA
+  NEGATIVA
+
+  @@map("sentimiento_resena")
+  @@schema("munay")
+}
+
+model ReporteResena {
+  id             String    @id @default(uuid()) @db.Uuid
+  resenaId       String    @map("resena_id") @db.Uuid
+  reportadaPor   String    @map("reportada_por") @db.Uuid
+  motivo         String
+  creadoEn       DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  revisadoPor    String?   @map("revisado_por") @db.Uuid
+  revisadoEn     DateTime? @map("revisado_en") @db.Timestamptz(3)
+  decision       String?
+  motivoDecision String?   @map("motivo_decision")
+  resena         Resena    @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+
+  @@unique([resenaId, reportadaPor])
+  @@index([revisadoEn, creadoEn, id])
+  @@map("reportes_resenas")
   @@schema("munay")
 }
 
