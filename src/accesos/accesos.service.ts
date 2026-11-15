@@ -87,6 +87,18 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
+function slugNuevo(nombre: string) {
+  const base =
+    nombre
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .slice(0, 90)
+      .replace(/^-|-$/g, '') || 'atractivo';
+  return `${base}-${randomUUID().slice(0, 8)}`;
+}
+
 @Injectable()
 export class AccesosService {
   constructor(private readonly prisma: ServicioPrisma) {}
@@ -114,6 +126,13 @@ export class AccesosService {
     if (!perfil?.activo || perfil.rol === 'SUPER_ADMIN')
       throw new ForbiddenException(
         'La cuenta no puede recibir esta asignación.',
+      );
+    const existente = await tx.administradorDestino.findUnique({
+      where: { usuarioId },
+    });
+    if (existente && existente.destinoId !== destinoId)
+      throw new ConflictException(
+        'Esta cuenta ya gestiona un destino. Retira la asignación anterior para continuar.',
       );
     if (perfil.rol === 'TURISTA')
       await tx.usuario.update({
@@ -172,6 +191,7 @@ export class AccesosService {
     return {
       filas: filas.slice(0, 25).map((fila) => ({
         ...fila,
+        propuesta: fila.tipo === 'solicitud' ? fila.propuesta : null,
         vencida:
           fila.estado === 'pendiente' &&
           fila.venceEn !== null &&
@@ -208,12 +228,11 @@ export class AccesosService {
         throw new NotFoundException('El atractivo ya no está disponible.');
       }
       if (
-        destinoId &&
-        (await tx.administradorDestino.findUnique({
-          where: { usuarioId_destinoId: { usuarioId: persona.id, destinoId } },
-        }))
+        await tx.administradorDestino.findUnique({
+          where: { usuarioId: persona.id },
+        })
       ) {
-        throw new ConflictException('Ya tienes acceso a este atractivo.');
+        throw new ConflictException('Tu cuenta ya gestiona un destino.');
       }
       if (
         await tx.accesoEncargado.findFirst({
@@ -247,9 +266,13 @@ export class AccesosService {
     const correo = texto(entrada.correo, 5, 254, 'El correo').toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo))
       throw new BadRequestException('Ingresa un correo válido.');
-    if (typeof entrada.destinoId !== 'string' || !uuid.test(entrada.destinoId))
+    const nuevo = entrada.nuevo === true;
+    if (
+      !nuevo &&
+      (typeof entrada.destinoId !== 'string' || !uuid.test(entrada.destinoId))
+    )
       throw new BadRequestException('Selecciona un atractivo.');
-    const destinoId = entrada.destinoId;
+    const destinoId = nuevo ? null : (entrada.destinoId as string);
     let enlace: URL;
     try {
       const base =
@@ -265,15 +288,17 @@ export class AccesosService {
       );
     }
     const token = randomBytes(32).toString('base64url');
-    enlace.hash = token;
+    enlace.hash = nuevo ? `${token}.nuevo` : token;
     const venceEn = new Date(Date.now() + 72 * 60 * 60 * 1000);
     const destino = await this.transaccion(async (tx) => {
       await this.confirmarSuperAdmin(tx, actorId);
-      const lugar = await tx.destino.findUnique({
-        where: { id: destinoId },
-        select: { nombre: true },
-      });
-      if (!lugar)
+      const lugar = destinoId
+        ? await tx.destino.findUnique({
+            where: { id: destinoId },
+            select: { nombre: true },
+          })
+        : null;
+      if (destinoId && !lugar)
         throw new NotFoundException('El atractivo ya no está disponible.');
       await tx.accesoEncargado.updateMany({
         where: { tipo: 'invitacion', estado: 'pendiente', correo, destinoId },
@@ -288,6 +313,7 @@ export class AccesosService {
           tipo: 'invitacion',
           correo,
           destinoId,
+          propuesta: nuevo ? { alta: true } : undefined,
           tokenHash: hashToken(token),
           venceEn,
           resueltoPor: actorId,
@@ -310,7 +336,7 @@ export class AccesosService {
             from,
             to: [correo],
             subject: 'Invitación para gestionar un atractivo en Munay',
-            text: `Te invitamos a gestionar ${destino.nombre} en Munay. Inicia sesión con esta misma dirección de correo y abre el enlace para aceptar. Es válido durante 72 horas.\n\n${enlace.href}`,
+            text: `Te invitamos a ${destino ? `gestionar ${destino.nombre}` : 'registrar un nuevo destino'} en Munay. Inicia sesión con este correo y abre el enlace para aceptar. Es válido durante 72 horas.\n\n${enlace.href}`,
           }),
         });
         enviado = respuesta.ok;
@@ -321,7 +347,7 @@ export class AccesosService {
     return { enlace: enlace.href, enviado };
   }
 
-  async aceptar(persona: Persona, token: unknown) {
+  async aceptar(persona: Persona, token: unknown, propuesta?: unknown) {
     if (typeof token !== 'string' || !/^[\w-]{43}$/.test(token))
       throw new BadRequestException('El enlace de invitación no es válido.');
     return this.transaccion(async (tx) => {
@@ -330,7 +356,6 @@ export class AccesosService {
       });
       if (
         !fila ||
-        !fila.destinoId ||
         !fila.venceEn ||
         fila.venceEn <= new Date() ||
         fila.estado !== 'pendiente'
@@ -343,10 +368,34 @@ export class AccesosService {
         throw new ForbiddenException(
           'Inicia sesión con el correo al que se envió esta invitación.',
         );
+      let destinoId = fila.destinoId;
+      if (!destinoId) {
+        if (
+          !fila.propuesta ||
+          typeof fila.propuesta !== 'object' ||
+          !('alta' in fila.propuesta) ||
+          fila.propuesta.alta !== true
+        )
+          throw new GoneException(
+            'El destino de esta invitación ya no está disponible.',
+          );
+        const datos = propuestaValida(propuesta);
+        const { distrito } = propuesta as Record<string, unknown>;
+        const destino = await tx.destino.create({
+          data: {
+            ...datos,
+            slug: slugNuevo(datos.nombre),
+            estadoEditorial: 'borrador',
+            informacion: { distrito: texto(distrito, 2, 100, 'El distrito') },
+          },
+          select: { id: true },
+        });
+        destinoId = destino.id;
+      }
       await this.asignar(
         tx,
         persona.id,
-        fila.destinoId,
+        destinoId,
         fila.resueltoPor ?? persona.id,
       );
       await tx.accesoEncargado.update({
@@ -354,6 +403,8 @@ export class AccesosService {
         data: {
           estado: 'aprobada',
           usuarioId: persona.id,
+          destinoId,
+          propuesta: Prisma.DbNull,
           resueltoEn: new Date(),
         },
       });
@@ -394,16 +445,12 @@ export class AccesosService {
           );
         if (!destinoId && fila.propuesta) {
           const datos = propuestaValida(fila.propuesta);
-          const base =
-            datos.nombre
-              .normalize('NFD')
-              .replace(/\p{Diacritic}/gu, '')
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-|-$/g, '')
-              .slice(0, 90) || 'atractivo';
           const destino = await tx.destino.create({
-            data: { ...datos, slug: `${base}-${randomUUID().slice(0, 8)}` },
+            data: {
+              ...datos,
+              slug: slugNuevo(datos.nombre),
+              estadoEditorial: 'borrador',
+            },
             select: { id: true },
           });
           destinoId = destino.id;
