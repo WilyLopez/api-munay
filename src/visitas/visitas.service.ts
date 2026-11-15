@@ -71,7 +71,12 @@ export class VisitasService {
     return destino;
   }
 
-  async sincronizar(perfil: Perfil, slug: string, renovar: boolean) {
+  async sincronizar(
+    perfil: Perfil,
+    slug: string,
+    renovar: boolean,
+    codigoId?: string,
+  ) {
     const destino = await this.obtenerDestinoAdministrado(perfil, slug);
     if (
       !(await this.prisma.cliente.destino.count({
@@ -95,7 +100,11 @@ export class VisitasService {
           orderBy: { creadoEn: 'desc' },
         });
 
-        if (actual && !renovar) return actual;
+        if (
+          actual &&
+          (!renovar || (codigoId !== undefined && actual.id !== codigoId))
+        )
+          return actual;
         if (actual) {
           await transaccion.codigoVisita.update({
             where: { id: actual.id },

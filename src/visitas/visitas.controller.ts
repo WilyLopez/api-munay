@@ -32,10 +32,16 @@ export class VisitasController {
   async sincronizar(
     @Param('slug') slug: string,
     @Body('renovar') renovar: unknown,
+    @Body('codigoId') codigoId: unknown,
     @Headers('authorization') autorizacion?: string,
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
-    return this.visitas.sincronizar(perfil, slug, renovar === true);
+    return this.visitas.sincronizar(
+      perfil,
+      slug,
+      renovar === true,
+      typeof codigoId === 'string' ? codigoId : undefined,
+    );
   }
 
   @Get('administracion/:slug/historial')
