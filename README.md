@@ -11,11 +11,13 @@ npm run start:dev
 
 La API arranca en [el puerto 3001](http://localhost:3001). Si aún no tienes un archivo `.env`, crea uno a partir de `.env.example`. Puedes cambiar el puerto mediante `PORT` en ese archivo o en el entorno del proceso.
 
-## Despliegue en Vercel
+## Despliegue en Render
 
-Importa el repositorio con el preset NestJS y Node.js 24.x. Configura `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `CRON_SECRET` en el entorno del despliegue. Aplica las migraciones en la base objetivo antes de publicar y comprueba que `/destinos` responde.
+Usa un **Web Service** con Node.js 24.x. El comando de compilación es `npm ci --include=dev && npm run build` y el de arranque es `npm run start:prod`. Render proporciona `PORT`. Configura `DATABASE_URL`, `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` en **Environment**. Aplica las migraciones en Supabase y comprueba que `/destinos` responde en el dominio de Render.
 
-El cron de producción invoca `GET /interno/tareas` una vez al día con `Authorization: Bearer <CRON_SECRET>`. Añade las tres variables `BLOCKCHAIN_*` del archivo de ejemplo cuando tengas listo el contrato de Sepolia.
+NestJS procesa las tareas pendientes mientras el servicio está activo. Si usas un programador externo, configura `CRON_SECRET` e invoca `GET /interno/tareas` con `Authorization: Bearer <CRON_SECRET>`. Añade las tres variables `BLOCKCHAIN_*` cuando tengas listo el contrato de Sepolia.
+
+Para enviar invitaciones a encargados, configura `MUNAY_WEB_URL` con el dominio HTTPS del frontend, `RESEND_API_KEY` con una clave de envío y `RESEND_REMITENTE` con una dirección de un dominio verificado. El SuperAdmin puede copiar el enlace privado si Resend no lo envía. En desarrollo local, la URL predeterminada es `http://localhost:3000`.
 
 ## Conexión con Supabase
 

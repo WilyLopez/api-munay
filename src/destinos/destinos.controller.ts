@@ -105,6 +105,13 @@ export class DestinosController {
     return this.destinos.obtenerFichaOperativa(slug, perfil);
   }
 
+  @Get('administracion/resumen')
+  @Header('Cache-Control', 'private, no-store')
+  async resumenAdministrado(@Headers('authorization') autorizacion?: string) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.destinos.resumenAdministrado(perfil);
+  }
+
   @Put('administracion/:slug/ficha')
   @HttpCode(204)
   async actualizarFichaOperativa(

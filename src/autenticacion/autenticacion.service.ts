@@ -1,4 +1,7 @@
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -62,6 +65,61 @@ export class AutenticacionService {
   async validarSesion(autorizacion?: string) {
     const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
     return this.actualizarActividad(usuario.id, sesionId);
+  }
+
+  async identificarSesion(autorizacion?: string) {
+    const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
+    const { perfil } = await this.actualizarActividad(usuario.id, sesionId);
+    if (!usuario.email) throw new UnauthorizedException('La cuenta necesita un correo confirmado.');
+    return { ...perfil, correo: usuario.email.trim().toLowerCase() };
+  }
+
+  async consultarPerfilAdmin(autorizacion?: string) {
+    const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
+    const { perfil } = await this.actualizarActividad(usuario.id, sesionId);
+    if (perfil.rol !== 'ADMIN_DESTINO') throw new ForbiddenException();
+    return {
+      nombreCompleto: perfil.nombreCompleto,
+      correo: usuario.email ?? null,
+    };
+  }
+
+  async actualizarPerfilAdmin(
+    autorizacion: string | undefined,
+    entrada: unknown,
+  ) {
+    const { perfil } = await this.validarSesion(autorizacion);
+    if (perfil.rol !== 'ADMIN_DESTINO') throw new ForbiddenException();
+    const nombreCompleto = typeof entrada === 'string' ? entrada.trim() : '';
+    if (nombreCompleto.length < 2 || nombreCompleto.length > 120) {
+      throw new BadRequestException(
+        'El nombre debe tener entre 2 y 120 caracteres.',
+      );
+    }
+    if (nombreCompleto === perfil.nombreCompleto) return;
+    await this.prisma.cliente.$transaction(async (tx) => {
+      const { count } = await tx.usuario.updateMany({
+        where: {
+          id: perfil.id,
+          activo: true,
+          rol: 'ADMIN_DESTINO',
+          nombreCompleto: perfil.nombreCompleto,
+        },
+        data: { nombreCompleto },
+      });
+      if (!count)
+        throw new ConflictException(
+          'Tu perfil cambió. Recarga la pantalla e inténtalo nuevamente.',
+        );
+      await tx.auditoriaUsuario.create({
+        data: {
+          actorId: perfil.id,
+          usuarioId: perfil.id,
+          accion: 'nombre',
+          cambios: { anterior: perfil.nombreCompleto, nuevo: nombreCompleto },
+        },
+      });
+    });
   }
 
   async cerrarSesion(autorizacion?: string) {

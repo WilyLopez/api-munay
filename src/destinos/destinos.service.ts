@@ -81,12 +81,31 @@ export class DestinosService {
     this.cacheDetalles.clear();
   }
 
+  resumenAdministrado(perfil: PerfilConRol) {
+    return this.prisma.cliente.destino.findMany({
+      where: alcanceAdministrador(perfil),
+      orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
+      select: {
+        id: true,
+        slug: true,
+        nombre: true,
+        ubicacion: true,
+        provincia: true,
+        categoria: true,
+        _count: {
+          select: { visitas: true, resenas: { where: { retiradaEn: null } } },
+        },
+      },
+    });
+  }
+
   async obtenerFichaOperativa(slug: string, perfil: PerfilConRol) {
     const ficha = await this.prisma.cliente.destino.findFirst({
       where: { slug, ...alcanceAdministrador(perfil) },
       select: {
         nombre: true,
         horario: true,
+        diasAtencion: true,
         tarifaGeneral: true,
         tarifaEstudiantes: true,
       },
@@ -111,16 +130,19 @@ export class DestinosService {
     if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) {
       throw new BadRequestException('Revisa los datos de la ficha.');
     }
-    const permitidos = ['horario', 'tarifaGeneral', 'tarifaEstudiantes'];
+    const permitidos = [
+      'horario',
+      'tarifaGeneral',
+      'tarifaEstudiantes',
+      'diasAtencion',
+    ];
     if (Object.keys(entrada).some((campo) => !permitidos.includes(campo))) {
       throw new BadRequestException(
         'La ficha incluye campos que no se pueden editar aquí.',
       );
     }
-    const { horario, tarifaGeneral, tarifaEstudiantes } = entrada as Record<
-      string,
-      unknown
-    >;
+    const { horario, tarifaGeneral, tarifaEstudiantes, diasAtencion } =
+      entrada as Record<string, unknown>;
     if (
       horario !== null &&
       (typeof horario !== 'string' || horario.trim().length > 240)
@@ -129,12 +151,27 @@ export class DestinosService {
         'El horario debe tener hasta 240 caracteres.',
       );
     }
+    if (
+      diasAtencion !== undefined &&
+      (!Array.isArray(diasAtencion) ||
+        diasAtencion.length > 7 ||
+        diasAtencion.some(
+          (dia) => !Number.isInteger(dia) || dia < 0 || dia > 6,
+        ) ||
+        new Set(diasAtencion).size !== diasAtencion.length)
+    )
+      throw new BadRequestException(
+        'Selecciona días de atención válidos y sin duplicados.',
+      );
     const { count } = await this.prisma.cliente.destino.updateMany({
       where,
       data: {
         horario: typeof horario === 'string' ? horario.trim() || null : null,
         tarifaGeneral: validarTarifa(tarifaGeneral),
         tarifaEstudiantes: validarTarifa(tarifaEstudiantes),
+        ...(Array.isArray(diasAtencion) && {
+          diasAtencion: diasAtencion.toSorted((a, b) => a - b),
+        }),
       },
     });
     if (!count)

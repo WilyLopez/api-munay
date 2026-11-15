@@ -12,6 +12,7 @@ import { ServicioPrisma } from '../prisma/prisma.service.js';
 import { PuntosService } from '../puntos/puntos.service.js';
 import { actualizarPromedioResenas } from './promedio-resenas.js';
 import { analizarSentimiento } from './sentimiento.js';
+import { evaluarRiesgoResena, UMBRAL_RIESGO_RESENA } from './riesgo-resena.js';
 
 export type PerfilResenas = { id: string; rol: RolUsuario };
 const TAMANO_PAGINA = 20;
@@ -271,6 +272,23 @@ export class ResenasService {
           throw new ConflictException(
             'Ya publicaste una reseña para esta visita.',
           );
+        await transaccion.$queryRaw`SELECT id FROM munay.usuarios WHERE id = ${perfil.id}::uuid FOR NO KEY UPDATE`;
+        const ahora = new Date();
+        const recientes = await transaccion.resena.findMany({
+          where: {
+            usuarioId: perfil.id,
+            creadaEn: { gte: new Date(ahora.getTime() - 86400000) },
+          },
+          orderBy: { creadaEn: 'desc' },
+          take: 20,
+          select: { comentario: true, creadaEn: true },
+        });
+        const { riesgo, motivo } = evaluarRiesgoResena(
+          comentario,
+          recientes,
+          ahora,
+        );
+        const sospechosa = riesgo > UMBRAL_RIESGO_RESENA;
         const id = randomUUID();
         const resena = await transaccion.resena.create({
           data: {
@@ -278,9 +296,11 @@ export class ResenasService {
             usuarioId: perfil.id,
             destinoId: destino.id,
             visitaId: visita.id,
-            puntosPendientes: true,
+            puntosPendientes: !sospechosa,
+            riesgo,
             calificacion,
             comentario,
+            ...(sospechosa && { reportes: { create: { riesgo, motivo } } }),
             anclaje: {
               create: {
                 huella: huellaResena({
