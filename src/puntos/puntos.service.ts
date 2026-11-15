@@ -18,6 +18,7 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly prisma: ServicioPrisma) {}
 
   onModuleInit() {
+    if (process.env.VERCEL === '1') return;
     this.reloj = setInterval(() => void this.procesarPendientes(), 30000);
     this.reloj.unref();
   }

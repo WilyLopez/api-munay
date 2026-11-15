@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nestjs",
+  "crons": [{ "path": "/interno/tareas", "schedule": "0 10 * * *" }]
+}

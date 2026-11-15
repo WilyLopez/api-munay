@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { Injectable, type OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client.js';
@@ -16,16 +16,21 @@ export class ServicioPrisma implements OnModuleDestroy {
       }
 
       const url = new URL(cadenaConexion);
-      const certificado = fileURLToPath(
+      const certificado = readFileSync(
         new URL('../../prisma/certs/supabase-ca.crt', import.meta.url),
+        'utf8',
       );
 
-      url.searchParams.set('sslmode', 'verify-full');
-      url.searchParams.set('sslrootcert', certificado);
+      for (const parametro of ['ssl', 'sslmode', 'sslrootcert', 'sslcert', 'sslkey']) {
+        url.searchParams.delete(parametro);
+      }
 
       this.clientePrisma = new PrismaClient({
         adapter: new PrismaPg({
           connectionString: url.toString(),
+          ssl: { ca: certificado, rejectUnauthorized: true },
+          max: process.env.VERCEL === '1' ? 3 : 10,
+          idleTimeoutMillis: 5000,
           connectionTimeoutMillis: 8000,
         }),
       });

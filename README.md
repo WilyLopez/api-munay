@@ -11,6 +11,12 @@ npm run start:dev
 
 La API arranca en [el puerto 3001](http://localhost:3001). Si aún no tienes un archivo `.env`, crea uno a partir de `.env.example`. Puedes cambiar el puerto mediante `PORT` en ese archivo o en el entorno del proceso.
 
+## Despliegue en Vercel
+
+Importa el repositorio con el preset NestJS y Node.js 24.x. Configura `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `CRON_SECRET` en el entorno del despliegue. Aplica las migraciones en la base objetivo antes de publicar y comprueba que `/destinos` responde.
+
+El cron de producción invoca `GET /interno/tareas` una vez al día con `Authorization: Bearer <CRON_SECRET>`. Añade las tres variables `BLOCKCHAIN_*` del archivo de ejemplo cuando tengas listo el contrato de Sepolia.
+
 ## Conexión con Supabase
 
 Guarda en `.env` la URI PostgreSQL de **Connect → Session pooler** como `DATABASE_URL`. La API verifica el certificado y el nombre del servidor con la CA pública de Supabase incluida en `prisma/certs`.

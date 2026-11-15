@@ -8,5 +8,6 @@ import { AnclajesService } from './anclajes.service.js';
   imports: [AutenticacionModule, PrismaModule],
   controllers: [AnclajesController],
   providers: [AnclajesService],
+  exports: [AnclajesService],
 })
 export class AnclajesModule {}
