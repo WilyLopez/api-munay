@@ -30,8 +30,8 @@ export class ServicioPrisma implements OnModuleDestroy {
           connectionString: url.toString(),
           ssl: { ca: certificado, rejectUnauthorized: true },
           max: process.env.VERCEL === '1' ? 3 : 10,
-          idleTimeoutMillis: 5000,
-          connectionTimeoutMillis: 8000,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
         }),
       });
     }

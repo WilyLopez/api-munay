@@ -51,6 +51,7 @@ model Usuario {
   votosResenas          VotoResena[]
   movimientosPuntos     MovimientoPuntos[]
 
+  @@index([rol, activo])
   @@map("usuarios")
   @@schema("munay")
 }
@@ -111,10 +112,36 @@ model Destino {
   codigosVisita        CodigoVisita[]
   resenas              Resena[]
   visitas              VisitaVerificada[]
+  accesosEncargados    AccesoEncargado[]
 
   @@index([provincia, categoria])
   @@index([categoria])
+  @@index([ordenPortada])
   @@map("destinos")
+  @@schema("munay")
+}
+
+model AccesoEncargado {
+  id          String    @id @default(uuid()) @db.Uuid
+  tipo        String
+  estado      String    @default("pendiente")
+  correo      String
+  usuarioId   String?   @map("usuario_id") @db.Uuid
+  destinoId   String?   @map("destino_id") @db.Uuid
+  motivo      String?
+  contacto    String?
+  propuesta   Json?
+  tokenHash   String?   @unique @map("token_hash")
+  venceEn     DateTime? @map("vence_en") @db.Timestamptz(3)
+  creadoEn    DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
+  resueltoEn  DateTime? @map("resuelto_en") @db.Timestamptz(3)
+  resueltoPor String?   @map("resuelto_por") @db.Uuid
+  observacion String?
+  destino     Destino?  @relation(fields: [destinoId], references: [id], onDelete: SetNull)
+
+  @@index([estado, creadoEn, id])
+  @@index([usuarioId, creadoEn])
+  @@map("accesos_encargados")
   @@schema("munay")
 }
 
@@ -188,6 +215,7 @@ model Resena {
   sentimiento       SentimientoResena?
   temas             String[]           @default([])
   puntosPendientes  Boolean            @default(false) @map("puntos_pendientes")
+  riesgo            Int?
   usuario           Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   destino           Destino            @relation(fields: [destinoId], references: [id], onDelete: Cascade)
   visita            VisitaVerificada?  @relation(fields: [visitaId], references: [id], onDelete: Cascade)
@@ -197,6 +225,8 @@ model Resena {
   anclaje           AnclajeResena?
 
   @@index([destinoId, creadaEn, id])
+  @@index([usuarioId, creadaEn])
+  @@index([puntosPendientes, creadaEn])
   @@map("resenas")
   @@schema("munay")
 }
@@ -249,7 +279,8 @@ enum SentimientoResena {
 model ReporteResena {
   id             String    @id @default(uuid()) @db.Uuid
   resenaId       String    @map("resena_id") @db.Uuid
-  reportadaPor   String    @map("reportada_por") @db.Uuid
+  reportadaPor   String?   @map("reportada_por") @db.Uuid
+  riesgo         Int?
   motivo         String
   creadoEn       DateTime  @default(now()) @map("creado_en") @db.Timestamptz(3)
   revisadoPor    String?   @map("revisado_por") @db.Uuid

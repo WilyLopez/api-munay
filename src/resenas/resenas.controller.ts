@@ -11,7 +11,9 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { ResenasService } from './resenas.service.js';
 
@@ -23,19 +25,30 @@ export class ResenasController {
   ) {}
 
   @Get('sentimiento/:slug')
-  @Header('Cache-Control', 'no-store')
+  @Header(
+    'Cache-Control',
+    'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+  )
   resumenSentimiento(@Param('slug') slug: string) {
     return this.resenas.resumenSentimiento(slug);
   }
 
   @Get()
-  @Header('Cache-Control', 'private, no-store')
   async listar(
+    @Res({ passthrough: true }) res: Response,
     @Query('destino') slug?: string,
     @Query('orden') orden?: string,
     @Query('pagina') pagina?: string,
     @Headers('authorization') autorizacion?: string,
   ) {
+    if (autorizacion) {
+      res.setHeader('Cache-Control', 'private, no-store');
+    } else {
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=30, s-maxage=30, stale-while-revalidate=120',
+      );
+    }
     const sesion = autorizacion
       ? await this.autenticacion.validarSesion(autorizacion)
       : null;

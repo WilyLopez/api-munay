@@ -36,6 +36,9 @@ export class ReportesController {
   async listar(
     @Query('estado') estado: string,
     @Query('pagina') pagina: string,
+    @Query('origen') origen?: string,
+    @Query('destino') destino?: string,
+    @Query('nivel') nivel?: string,
     @Headers('authorization') autorizacion?: string,
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
@@ -43,6 +46,7 @@ export class ReportesController {
       perfil,
       estado === 'revisados',
       /^[1-9]\d{0,4}$/.test(pagina) ? Number(pagina) : 1,
+      { origen, destino, nivel },
     );
   }
 

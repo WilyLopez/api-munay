@@ -40,6 +40,8 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       {
         saldo: number;
         posicion: number | null;
+        visitas: number;
+        resenas: number;
         ranking: {
           nombre: string;
           saldo: number;
@@ -66,8 +68,52 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       )
       SELECT coalesce((SELECT saldo FROM posiciones WHERE propia), 0)::int AS saldo,
         (SELECT posicion FROM posiciones WHERE propia) AS posicion,
+        (SELECT count(*)::int FROM munay.visitas_verificadas WHERE usuario_id = ${usuarioId}::uuid) AS visitas,
+        (SELECT count(*)::int FROM munay.resenas WHERE usuario_id = ${usuarioId}::uuid AND retirada_en IS NULL) AS resenas,
         coalesce((SELECT jsonb_agg(to_jsonb(p) - 'id' ORDER BY posicion, id) FROM primeros p), '[]'::jsonb) AS ranking`;
     return resumen;
+  }
+
+  async historial(
+    usuarioId: string,
+    seccion: 'visitas' | 'resenas',
+    pagina: number,
+  ) {
+    const limite = 12;
+    const paginacion = { skip: (pagina - 1) * limite, take: limite + 1 };
+    const destino = { select: { slug: true, nombre: true, ubicacion: true } };
+    const where = { usuarioId };
+    if (seccion === 'visitas') {
+      const filas = await this.prisma.cliente.visitaVerificada.findMany({
+        where,
+        ...paginacion,
+        orderBy: [{ verificadaEn: 'desc' }, { id: 'desc' }],
+        select: { id: true, verificadaEn: true, destino },
+      });
+      return {
+        seccion,
+        filas: filas.slice(0, limite),
+        hayMas: filas.length > limite && pagina < 9999,
+      };
+    }
+    const filas = await this.prisma.cliente.resena.findMany({
+      where,
+      ...paginacion,
+      orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
+      select: {
+        id: true,
+        creadaEn: true,
+        calificacion: true,
+        comentario: true,
+        retiradaEn: true,
+        destino,
+      },
+    });
+    return {
+      seccion,
+      filas: filas.slice(0, limite),
+      hayMas: filas.length > limite && pagina < 9999,
+    };
   }
 
   async acreditar(resenaId?: string) {

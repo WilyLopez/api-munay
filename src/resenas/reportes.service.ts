@@ -10,6 +10,8 @@ import {
   type PerfilConRol,
 } from '../autenticacion/alcance-administrador.js';
 import { ServicioPrisma } from '../prisma/prisma.service.js';
+import type { Prisma } from '../generated/prisma/client.js';
+import { UMBRAL_RIESGO_RESENA } from './riesgo-resena.js';
 import { revertirPuntos } from '../puntos/puntos.service.js';
 import { actualizarPromedioResenas } from './promedio-resenas.js';
 
@@ -50,34 +52,85 @@ export class ReportesService {
     throw new ConflictException('Ya enviaste un reporte sobre esta reseña.');
   }
 
-  async listar(perfil: PerfilConRol, revisados: boolean, pagina: number) {
+  async listar(
+    perfil: PerfilConRol,
+    revisados: boolean,
+    pagina: number,
+    filtros: { origen?: string; destino?: string; nivel?: string } = {},
+  ) {
     this.verificarSuperAdmin(perfil);
-    const filas = await this.prisma.cliente.reporteResena.findMany({
-      where: { revisadoEn: revisados ? { not: null } : null },
-      orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
-      skip: (pagina - 1) * TAMANO_PAGINA,
-      take: TAMANO_PAGINA + 1,
-      select: {
-        id: true,
-        motivo: true,
-        creadoEn: true,
-        revisadoEn: true,
-        decision: true,
-        motivoDecision: true,
-        resena: {
+    const cliente = this.prisma.cliente;
+    const where: Prisma.ReporteResenaWhereInput = {
+      revisadoEn: revisados ? { not: null } : null,
+    };
+    if (filtros.destino && typeof filtros.destino === 'string')
+      where.resena = { destino: { slug: filtros.destino.slice(0, 160) } };
+    if (filtros.origen === 'manual') where.riesgo = null;
+    else if (filtros.nivel === 'muy-alto') where.riesgo = { gte: 90 };
+    else if (filtros.nivel === 'alto')
+      where.riesgo = { gt: UMBRAL_RIESGO_RESENA, lt: 90 };
+    else if (filtros.origen === 'automatico') where.riesgo = { not: null };
+    const hoy = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Lima',
+      dateStyle: 'short',
+    }).format(new Date());
+    const [filas, pendientesAutomaticos, revisadosHoy, destinos] =
+      await Promise.all([
+        cliente.reporteResena.findMany({
+          where,
+          orderBy: [
+            { riesgo: { sort: 'desc', nulls: 'last' } },
+            { creadoEn: 'desc' },
+            { id: 'desc' },
+          ],
+          skip: (pagina - 1) * TAMANO_PAGINA,
+          take: TAMANO_PAGINA + 1,
           select: {
             id: true,
-            comentario: true,
-            calificacion: true,
-            destino: { select: { nombre: true, slug: true } },
-            usuario: { select: { nombreCompleto: true } },
+            motivo: true,
+            riesgo: true,
+            creadoEn: true,
+            revisadoEn: true,
+            decision: true,
+            motivoDecision: true,
+            resena: {
+              select: {
+                id: true,
+                comentario: true,
+                calificacion: true,
+                visitaId: true,
+                destino: { select: { nombre: true, slug: true } },
+                usuario: { select: { nombreCompleto: true } },
+              },
+            },
           },
-        },
-      },
-    });
+        }),
+        cliente.reporteResena.count({
+          where: { riesgo: { not: null }, revisadoEn: null },
+        }),
+        cliente.reporteResena.count({
+          where: {
+            riesgo: { not: null },
+            revisadoEn: { gte: new Date(`${hoy}T00:00:00-05:00`) },
+          },
+        }),
+        cliente.destino.findMany({
+          select: { slug: true, nombre: true },
+          orderBy: { nombre: 'asc' },
+        }),
+      ]);
     return {
-      reportes: filas.slice(0, TAMANO_PAGINA),
+      reportes: filas
+        .slice(0, TAMANO_PAGINA)
+        .map(({ resena: { visitaId, ...resena }, ...fila }) => ({
+          ...fila,
+          resena: { ...resena, verificada: Boolean(visitaId) },
+        })),
       hayMas: filas.length > TAMANO_PAGINA,
+      pendientesAutomaticos,
+      revisadosHoy,
+      destinos,
+      umbral: UMBRAL_RIESGO_RESENA,
     };
   }
 
@@ -103,7 +156,11 @@ export class ReportesService {
       async (tx) => {
         const reporte = await tx.reporteResena.findUnique({
           where: { id },
-          select: { resenaId: true, resena: { select: { destinoId: true } } },
+          select: {
+            riesgo: true,
+            resenaId: true,
+            resena: { select: { destinoId: true } },
+          },
         });
         if (!reporte)
           throw new NotFoundException('El reporte ya no está disponible.');
@@ -147,6 +204,11 @@ export class ReportesService {
             data: datos,
           });
           await actualizarPromedioResenas(tx, destinoId);
+        } else if (reporte.riesgo !== null) {
+          await tx.resena.updateMany({
+            where: { id: resenaId, retiradaEn: null, visitaId: { not: null } },
+            data: { puntosPendientes: true },
+          });
         }
       },
       { maxWait: 8000, timeout: 15000 },

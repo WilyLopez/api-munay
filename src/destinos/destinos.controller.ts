@@ -11,7 +11,9 @@ import {
   Param,
   ParseUUIDPipe,
   Put,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { PuntosService } from '../puntos/puntos.service.js';
 import { DestinosService } from './destinos.service.js';
@@ -25,8 +27,18 @@ export class DestinosController {
   ) {}
 
   @Get()
-  @Header('Cache-Control', 'private, no-store')
-  async listar(@Headers('authorization') autorizacion?: string) {
+  async listar(
+    @Res({ passthrough: true }) res: Response,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    if (autorizacion) {
+      res.setHeader('Cache-Control', 'private, no-store');
+    } else {
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+      );
+    }
     const sesion = autorizacion
       ? await this.autenticacion.validarSesion(autorizacion)
       : null;
@@ -40,11 +52,19 @@ export class DestinosController {
   }
 
   @Get(':slug')
-  @Header('Cache-Control', 'private, no-store')
   async obtener(
     @Param('slug') slug: string,
+    @Res({ passthrough: true }) res: Response,
     @Headers('authorization') autorizacion?: string,
   ) {
+    if (autorizacion) {
+      res.setHeader('Cache-Control', 'private, no-store');
+    } else {
+      res.setHeader(
+        'Cache-Control',
+        'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+      );
+    }
     const sesion = autorizacion
       ? await this.autenticacion.validarSesion(autorizacion)
       : null;
@@ -83,6 +103,13 @@ export class DestinosController {
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
     return this.destinos.obtenerFichaOperativa(slug, perfil);
+  }
+
+  @Get('administracion/resumen')
+  @Header('Cache-Control', 'private, no-store')
+  async resumenAdministrado(@Headers('authorization') autorizacion?: string) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.destinos.resumenAdministrado(perfil);
   }
 
   @Put('administracion/:slug/ficha')

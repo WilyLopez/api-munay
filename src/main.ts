@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { NestFactory } from '@nestjs/core';
+import compression from 'compression';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -9,6 +10,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+  app.use(compression());
   if (process.env.VERCEL !== '1') app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT || 3001));
 }

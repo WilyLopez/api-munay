@@ -10,6 +10,7 @@ import { UsuariosModule } from './usuarios/usuarios.module.js';
 import { AnclajesModule } from './blockchain/anclajes.module.js';
 import { PuntosModule } from './puntos/puntos.module.js';
 import { TareasController } from './tareas.controller.js';
+import { AccesosModule } from './accesos/accesos.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { TareasController } from './tareas.controller.js';
     UsuariosModule,
     AnclajesModule,
     PuntosModule,
+    AccesosModule,
   ],
   controllers: [AppController, TareasController],
   providers: [AppService],

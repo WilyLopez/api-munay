@@ -12,6 +12,7 @@ import { ServicioPrisma } from '../prisma/prisma.service.js';
 import { PuntosService } from '../puntos/puntos.service.js';
 import { actualizarPromedioResenas } from './promedio-resenas.js';
 import { analizarSentimiento } from './sentimiento.js';
+import { evaluarRiesgoResena, UMBRAL_RIESGO_RESENA } from './riesgo-resena.js';
 
 export type PerfilResenas = { id: string; rol: RolUsuario };
 const TAMANO_PAGINA = 20;
@@ -35,12 +36,52 @@ function seleccionarResena(usuarioId?: string) {
 
 @Injectable()
 export class ResenasService {
+  private cacheSentimiento = new Map<
+    string,
+    {
+      resumen: {
+        total: number;
+        positivas: number;
+        neutras: number;
+        negativas: number;
+        temas: string[];
+      };
+      expiraEn: number;
+    }
+  >();
+  private cacheDestinosListado?: {
+    destinos: { nombre: string; slug: string }[];
+    expiraEn: number;
+  };
+
   constructor(
     private readonly prisma: ServicioPrisma,
     private readonly puntos: PuntosService,
   ) {}
 
+  private async obtenerDestinosListado() {
+    const ahora = Date.now();
+    if (
+      this.cacheDestinosListado &&
+      this.cacheDestinosListado.expiraEn > ahora
+    ) {
+      return this.cacheDestinosListado.destinos;
+    }
+    const destinos = await this.prisma.cliente.destino.findMany({
+      select: { nombre: true, slug: true },
+      orderBy: { nombre: 'asc' },
+    });
+    this.cacheDestinosListado = { destinos, expiraEn: ahora + 300_000 };
+    return destinos;
+  }
+
   async resumenSentimiento(slug: string) {
+    const ahora = Date.now();
+    const cacheado = this.cacheSentimiento.get(slug);
+    if (cacheado && cacheado.expiraEn > ahora) {
+      return cacheado.resumen;
+    }
+
     const [resumen] = await this.prisma.cliente.$queryRaw<
       {
         total: number;
@@ -67,6 +108,10 @@ export class ResenasService {
         (count(*) FILTER (WHERE sentimiento = 'NEGATIVA'))::int AS negativas,
         ARRAY(SELECT tema FROM temas_frecuentes ORDER BY frecuencia DESC, tema) AS temas
       FROM visibles`;
+    if (resumen) {
+      if (this.cacheSentimiento.size > 100) this.cacheSentimiento.clear();
+      this.cacheSentimiento.set(slug, { resumen, expiraEn: ahora + 60_000 });
+    }
     return resumen;
   }
 
@@ -131,10 +176,7 @@ export class ResenasService {
             },
           })
         : null,
-      cliente.destino.findMany({
-        select: { nombre: true, slug: true },
-        orderBy: { nombre: 'asc' },
-      }),
+      this.obtenerDestinosListado(),
     ]);
     const total = grupos.reduce((suma, grupo) => suma + grupo._count._all, 0);
     const movimiento = visita?.resena?.movimientosPuntos[0];
@@ -230,6 +272,23 @@ export class ResenasService {
           throw new ConflictException(
             'Ya publicaste una reseña para esta visita.',
           );
+        await transaccion.$queryRaw`SELECT id FROM munay.usuarios WHERE id = ${perfil.id}::uuid FOR NO KEY UPDATE`;
+        const ahora = new Date();
+        const recientes = await transaccion.resena.findMany({
+          where: {
+            usuarioId: perfil.id,
+            creadaEn: { gte: new Date(ahora.getTime() - 86400000) },
+          },
+          orderBy: { creadaEn: 'desc' },
+          take: 20,
+          select: { comentario: true, creadaEn: true },
+        });
+        const { riesgo, motivo } = evaluarRiesgoResena(
+          comentario,
+          recientes,
+          ahora,
+        );
+        const sospechosa = riesgo > UMBRAL_RIESGO_RESENA;
         const id = randomUUID();
         const resena = await transaccion.resena.create({
           data: {
@@ -237,9 +296,11 @@ export class ResenasService {
             usuarioId: perfil.id,
             destinoId: destino.id,
             visitaId: visita.id,
-            puntosPendientes: true,
+            puntosPendientes: !sospechosa,
+            riesgo,
             calificacion,
             comentario,
+            ...(sospechosa && { reportes: { create: { riesgo, motivo } } }),
             anclaje: {
               create: {
                 huella: huellaResena({
@@ -258,6 +319,7 @@ export class ResenasService {
         return resena;
       },
     );
+    this.cacheSentimiento.delete(slug);
     await this.puntos.acreditar(resenaPublicada.id).catch(() => undefined);
     return resenaPublicada;
   }
