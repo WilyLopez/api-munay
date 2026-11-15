@@ -131,7 +131,7 @@ export class AnclajesService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
-    if (!this.red) return;
+    if (!this.red || process.env.VERCEL === '1') return;
     this.reloj = setInterval(() => void this.procesar(), 12000);
     this.reloj.unref();
   }
@@ -140,123 +140,133 @@ export class AnclajesService implements OnModuleInit, OnModuleDestroy {
     clearInterval(this.reloj);
   }
 
-  private async procesar() {
+  async procesar() {
     const red = this.red;
-    if (!red || this.ocupado) return;
+    if (!red) return 'deshabilitado';
+    if (this.ocupado) return 'ocupado';
     this.ocupado = true;
     try {
-      await this.prisma.cliente.$transaction(
-        async (tx) => {
-          const [bloqueo] = await tx.$queryRaw<
-            { obtenido: boolean }[]
-          >`SELECT pg_try_advisory_xact_lock(173921, 13) AS obtenido`;
-          if (!bloqueo.obtenido) return;
-          const enviadas = await tx.anclajeResena.findFirst({
-            where: {
-              firmada: { not: null },
-              estado: { in: ['enviado', 'fallido'] },
-            },
-            orderBy: { creadoEn: 'asc' },
-          });
-          const registro =
-            enviadas ??
-            (await tx.anclajeResena.findFirst({
-              where: { estado: 'pendiente' },
-              orderBy: [{ creadoEn: 'asc' }, { resenaId: 'asc' }],
-            }));
-          if (!registro) {
-            const anteriores = await tx.resena.findMany({
+      const procesarPaso = () =>
+        this.prisma.cliente.$transaction(
+          async (tx) => {
+            const [bloqueo] = await tx.$queryRaw<
+              { obtenido: boolean }[]
+            >`SELECT pg_try_advisory_xact_lock(173921, 13) AS obtenido`;
+            if (!bloqueo.obtenido) return;
+            const enviadas = await tx.anclajeResena.findFirst({
               where: {
-                visitaId: { not: null },
-                retiradaEn: null,
-                anclaje: null,
+                firmada: { not: null },
+                estado: { in: ['enviado', 'fallido'] },
               },
-              select: {
-                id: true,
-                destinoId: true,
-                calificacion: true,
-                comentario: true,
-              },
-              take: 25,
+              orderBy: { creadoEn: 'asc' },
             });
-            await tx.anclajeResena.createMany({
-              data: anteriores.map((resena) => ({
-                resenaId: resena.id,
-                huella: huellaResena(resena),
-              })),
-              skipDuplicates: true,
-            });
-            return;
-          }
-          if (registro.estado === 'fallido') return;
-          const where = { resenaId: registro.resenaId };
-          try {
-            await red.comprobarRed();
-            if (registro.firmada && registro.transaccion && registro.contrato) {
-              const hash = registro.transaccion as Hex;
-              const recibo = await red.consultar(
-                hash,
-                registro.huella as Hex,
-                registro.contrato as Address,
-              );
-              if (recibo.estado === 'confirmando') return;
-              if (recibo.estado === 'sin-recibo') {
-                await red.propagar(registro.firmada, hash);
-                if (registro.intentos)
-                  await tx.anclajeResena.update({
-                    where,
-                    data: { intentos: 0, error: null },
-                  });
-                return;
-              }
-              await tx.anclajeResena.update({
-                where,
-                data: {
-                  estado: recibo.estado,
-                  firmada: null,
-                  bloque: recibo.bloque,
-                  costoWei: recibo.costoWei,
-                  confirmadoEn:
-                    recibo.estado === 'confirmado' ? new Date() : null,
-                  error:
-                    recibo.estado === 'fallido'
-                      ? 'La transacción terminó sin registrar la huella.'
-                      : null,
+            const registro =
+              enviadas ??
+              (await tx.anclajeResena.findFirst({
+                where: { estado: 'pendiente' },
+                orderBy: [{ creadoEn: 'asc' }, { resenaId: 'asc' }],
+              }));
+            if (!registro) {
+              const anteriores = await tx.resena.findMany({
+                where: {
+                  visitaId: { not: null },
+                  retiradaEn: null,
+                  anclaje: null,
                 },
+                select: {
+                  id: true,
+                  destinoId: true,
+                  calificacion: true,
+                  comentario: true,
+                },
+                take: 25,
+              });
+              await tx.anclajeResena.createMany({
+                data: anteriores.map((resena) => ({
+                  resenaId: resena.id,
+                  huella: huellaResena(resena),
+                })),
+                skipDuplicates: true,
               });
               return;
             }
-            const firma = await red.firmar(registro.huella as Hex);
-            await tx.anclajeResena.update({
-              where,
-              data: {
-                ...firma,
-                contrato: red.contrato,
-                estado: 'enviado',
-                intentos: 0,
-                error: null,
-              },
-            });
-          } catch {
-            const intentos = registro.intentos + 1;
-            await tx.anclajeResena.update({
-              where,
-              data: {
-                intentos,
-                estado:
-                  intentos >= intentosMaximos ? 'fallido' : registro.estado,
-                error:
-                  'La red de prueba o el firmante no pudo procesar el registro.',
-              },
-            });
-          }
-        },
-        { maxWait: 8000, timeout: 35000 },
-      );
+            if (registro.estado === 'fallido') return;
+            const where = { resenaId: registro.resenaId };
+            try {
+              await red.comprobarRed();
+              if (
+                registro.firmada &&
+                registro.transaccion &&
+                registro.contrato
+              ) {
+                const hash = registro.transaccion as Hex;
+                const recibo = await red.consultar(
+                  hash,
+                  registro.huella as Hex,
+                  registro.contrato as Address,
+                );
+                if (recibo.estado === 'confirmando') return;
+                if (recibo.estado === 'sin-recibo') {
+                  await red.propagar(registro.firmada, hash);
+                  if (registro.intentos)
+                    await tx.anclajeResena.update({
+                      where,
+                      data: { intentos: 0, error: null },
+                    });
+                  return;
+                }
+                await tx.anclajeResena.update({
+                  where,
+                  data: {
+                    estado: recibo.estado,
+                    firmada: null,
+                    bloque: recibo.bloque,
+                    costoWei: recibo.costoWei,
+                    confirmadoEn:
+                      recibo.estado === 'confirmado' ? new Date() : null,
+                    error:
+                      recibo.estado === 'fallido'
+                        ? 'La transacción terminó sin registrar la huella.'
+                        : null,
+                  },
+                });
+                return;
+              }
+              const firma = await red.firmar(registro.huella as Hex);
+              await tx.anclajeResena.update({
+                where,
+                data: {
+                  ...firma,
+                  contrato: red.contrato,
+                  estado: 'enviado',
+                  intentos: 0,
+                  error: null,
+                },
+              });
+              return true;
+            } catch {
+              const intentos = registro.intentos + 1;
+              await tx.anclajeResena.update({
+                where,
+                data: {
+                  intentos,
+                  estado:
+                    intentos >= intentosMaximos ? 'fallido' : registro.estado,
+                  error:
+                    'La red de prueba o el firmante no pudo procesar el registro.',
+                },
+              });
+            }
+          },
+          { maxWait: 8000, timeout: 35000 },
+        );
+      if (await procesarPaso()) await procesarPaso();
+      return 'procesado';
     } catch {
       this.logger.warn(
         'No se pudo sincronizar la cola de anclajes de reseñas.',
       );
+      return 'error';
     } finally {
       this.ocupado = false;
     }

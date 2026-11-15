@@ -9,7 +9,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
-  app.enableShutdownHooks();
+  if (process.env.VERCEL !== '1') app.enableShutdownHooks();
   await app.listen(Number(process.env.PORT || 3001));
 }
 await bootstrap();

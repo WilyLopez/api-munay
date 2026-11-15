@@ -8,6 +8,8 @@ import { VisitasModule } from './visitas/visitas.module.js';
 import { ResenasModule } from './resenas/resenas.module.js';
 import { UsuariosModule } from './usuarios/usuarios.module.js';
 import { AnclajesModule } from './blockchain/anclajes.module.js';
+import { PuntosModule } from './puntos/puntos.module.js';
+import { TareasController } from './tareas.controller.js';
 
 @Module({
   imports: [
@@ -18,8 +20,9 @@ import { AnclajesModule } from './blockchain/anclajes.module.js';
     ResenasModule,
     UsuariosModule,
     AnclajesModule,
+    PuntosModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TareasController],
   providers: [AppService],
 })
 export class AppModule {}
