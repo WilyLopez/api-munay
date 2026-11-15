@@ -68,6 +68,7 @@ export class ResenasService {
       return this.cacheDestinosListado.destinos;
     }
     const destinos = await this.prisma.cliente.destino.findMany({
+      where: { estadoEditorial: 'publicada' },
       select: { nombre: true, slug: true },
       orderBy: { nombre: 'asc' },
     });
@@ -95,7 +96,7 @@ export class ResenasService {
         SELECT r.sentimiento, r.temas
         FROM munay.resenas r
         JOIN munay.destinos d ON d.id = r.destino_id
-        WHERE d.slug = ${slug} AND r.retirada_en IS NULL
+        WHERE d.slug = ${slug} AND d.estado_editorial = 'publicada' AND r.retirada_en IS NULL
       ), temas_frecuentes AS (
         SELECT tema, count(*) AS frecuencia
         FROM visibles CROSS JOIN LATERAL unnest(temas) AS tema
@@ -124,7 +125,7 @@ export class ResenasService {
     const cliente = this.prisma.cliente;
     const destino = slug
       ? await cliente.destino.findUnique({
-          where: { slug },
+          where: { slug, estadoEditorial: 'publicada' },
           select: { id: true, nombre: true },
         })
       : null;
@@ -132,6 +133,7 @@ export class ResenasService {
       throw new NotFoundException('El destino no está disponible.');
     const where = {
       retiradaEn: null,
+      destino: { estadoEditorial: 'publicada' },
       ...(destino && { destinoId: destino.id }),
     };
     const ordenFecha = [
@@ -249,7 +251,7 @@ export class ResenasService {
     const resenaPublicada = await this.prisma.cliente.$transaction(
       async (transaccion) => {
         const destino = await transaccion.destino.findUnique({
-          where: { slug },
+          where: { slug, estadoEditorial: 'publicada' },
           select: { id: true },
         });
         if (!destino)

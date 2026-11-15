@@ -73,6 +73,14 @@ export class VisitasService {
 
   async sincronizar(perfil: Perfil, slug: string, renovar: boolean) {
     const destino = await this.obtenerDestinoAdministrado(perfil, slug);
+    if (
+      !(await this.prisma.cliente.destino.count({
+        where: { id: destino.id, estadoEditorial: 'publicada' },
+      }))
+    )
+      throw new BadRequestException(
+        'Publica el destino antes de generar el QR de visitas.',
+      );
     const codigo = await this.prisma.cliente.$transaction(
       async (transaccion) => {
         await bloquearDestino(transaccion, destino.id);
@@ -234,14 +242,19 @@ export class VisitasService {
       );
 
     const origen = await this.prisma.cliente.codigoVisita.findUnique({
-      where: { id: codigoId },
+      where: { id: codigoId, destino: { estadoEditorial: 'publicada' } },
       select: {
         id: true,
         usadoEn: true,
         venceEn: true,
         anuladoEn: true,
         destino: {
-          select: { ...camposDestino, latitud: true, longitud: true },
+          select: {
+            ...camposDestino,
+            latitud: true,
+            longitud: true,
+            informacion: true,
+          },
         },
       },
     });
@@ -251,7 +264,18 @@ export class VisitasService {
       );
     }
 
-    return origen;
+    const { informacion, ...destino } = origen.destino;
+    if (
+      informacion &&
+      typeof informacion === 'object' &&
+      !Array.isArray(informacion) &&
+      typeof informacion.latitudIngreso === 'string' &&
+      typeof informacion.longitudIngreso === 'string'
+    ) {
+      destino.latitud = Number(informacion.latitudIngreso);
+      destino.longitud = Number(informacion.longitudIngreso);
+    }
+    return { ...origen, destino };
   }
 
   private visitaExistente(

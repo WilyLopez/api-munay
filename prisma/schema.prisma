@@ -91,6 +91,9 @@ model Destino {
   distanciaKm          Int?                   @map("distancia_km")
   duracionMinutos      Int?                   @map("duracion_minutos")
   recomendacion        String?
+  informacion          Json                   @default("{}")
+  estadoEditorial      String                 @default("publicada") @map("estado_editorial")
+  revisadoEn           DateTime?              @map("revisado_en") @db.Timestamptz(3)
   fuenteRutaUrl        String?                @map("fuente_ruta_url")
   nombre               String
   descripcion          String
@@ -117,6 +120,7 @@ model Destino {
   @@index([provincia, categoria])
   @@index([categoria])
   @@index([ordenPortada])
+  @@index([estadoEditorial])
   @@map("destinos")
   @@schema("munay")
 }
@@ -146,7 +150,7 @@ model AccesoEncargado {
 }
 
 model AdministradorDestino {
-  usuarioId  String   @map("usuario_id") @db.Uuid
+  usuarioId  String   @unique @map("usuario_id") @db.Uuid
   destinoId  String   @map("destino_id") @db.Uuid
   asignadoEn DateTime @default(now()) @map("asignado_en") @db.Timestamptz(3)
   usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)

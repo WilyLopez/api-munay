@@ -82,11 +82,13 @@ export class AccesosController {
   @HttpCode(204)
   async aceptar(
     @Body('token') invitacion: unknown,
+    @Body('propuesta') propuesta: unknown,
     @Headers('authorization') token?: string,
   ) {
     await this.accesos.aceptar(
       await this.autenticacion.identificarSesion(token),
       invitacion,
+      propuesta,
     );
   }
 

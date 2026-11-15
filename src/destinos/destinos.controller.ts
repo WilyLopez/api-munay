@@ -123,6 +123,17 @@ export class DestinosController {
     await this.destinos.actualizarFichaOperativa(slug, perfil, entrada);
   }
 
+  @Put('administracion/:slug/estado')
+  @HttpCode(204)
+  async revisarFicha(
+    @Param('slug') slug: string,
+    @Body('estado') estado: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    await this.destinos.revisarFicha(slug, perfil, estado);
+  }
+
   @Put(':id/favorito')
   @HttpCode(204)
   async guardarFavorito(

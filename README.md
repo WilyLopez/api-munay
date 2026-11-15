@@ -21,6 +21,8 @@ Para enviar invitaciones a encargados, configura `MUNAY_WEB_URL` con el dominio 
 
 ## Conexión con Supabase
 
+Las migraciones amplían los destinos, crean el bucket público `destinos` y limitan a una asignación por encargado. La subida de fotos requiere una cuenta activa y acceso al destino. Antes de aplicar la restricción, verifica si hay encargados con asignaciones múltiples y conserva la que corresponda desde el panel de SuperAdmin.
+
 Guarda en `.env` la URI PostgreSQL de **Connect → Session pooler** como `DATABASE_URL`. La API verifica el certificado y el nombre del servidor con la CA pública de Supabase incluida en `prisma/certs`.
 
 ```sh

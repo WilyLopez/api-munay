@@ -82,11 +82,13 @@ export class UsuariosService {
       );
     }
     const consulta = Prisma.sql`${origen} WHERE a.email is not null AND ${Prisma.join(condiciones, ' AND ')}`;
-    const [resultado] = await this.prisma.cliente.$queryRaw<{
-      total: number;
-      pagina: number;
-      usuarios: (Omit<Cuenta, 'creadaEn'> & { creadaEn: string })[];
-    }[]>`
+    const [resultado] = await this.prisma.cliente.$queryRaw<
+      {
+        total: number;
+        pagina: number;
+        usuarios: (Omit<Cuenta, 'creadaEn'> & { creadaEn: string })[];
+      }[]
+    >`
       with conteo as (select count(*)::int as total ${consulta}),
       pagina as (
         select total, least(${pagina}, greatest(1, ceil(total::numeric / ${limite})))::int as actual
@@ -224,6 +226,15 @@ export class UsuariosService {
         if (!destino)
           throw new NotFoundException('El destino ya no está disponible.');
         const data = { usuarioId: id, destinoId: valor };
+        if (accion === 'asignar') {
+          const existente = await tx.administradorDestino.findUnique({
+            where: { usuarioId: id },
+          });
+          if (existente && existente.destinoId !== valor)
+            throw new BadRequestException(
+              'Esta cuenta ya gestiona un destino. Retira la asignación anterior para continuar.',
+            );
+        }
         const resultado =
           accion === 'asignar'
             ? await tx.administradorDestino.createMany({
