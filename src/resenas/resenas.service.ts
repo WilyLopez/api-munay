@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { huellaResena } from '../blockchain/huella-resena.js';
+import { DestinosService } from '../destinos/destinos.service.js';
 import type { Prisma, RolUsuario } from '../generated/prisma/client.js';
 import { ServicioPrisma } from '../prisma/prisma.service.js';
 import { PuntosService } from '../puntos/puntos.service.js';
@@ -34,6 +35,25 @@ function seleccionarResena(usuarioId?: string) {
   } satisfies Prisma.ResenaSelect;
 }
 
+function serializarResena({
+  visitaId,
+  _count,
+  votos,
+  anclaje,
+  ...fila
+}: Prisma.ResenaGetPayload<{ select: ReturnType<typeof seleccionarResena> }>) {
+  return {
+    ...fila,
+    verificada: Boolean(visitaId),
+    utiles: _count.votos,
+    votoPropio: Boolean(votos?.length),
+    integridad:
+      anclaje?.estado === 'confirmado'
+        ? { huella: anclaje.huella, transaccion: anclaje.transaccion }
+        : null,
+  };
+}
+
 @Injectable()
 export class ResenasService {
   private cacheSentimiento = new Map<
@@ -57,6 +77,7 @@ export class ResenasService {
   constructor(
     private readonly prisma: ServicioPrisma,
     private readonly puntos: PuntosService,
+    private readonly destinos: DestinosService,
   ) {}
 
   private async obtenerDestinosListado() {
@@ -184,18 +205,7 @@ export class ResenasService {
     const movimiento = visita?.resena?.movimientosPuntos[0];
     return {
       destinos,
-      resenas: filas
-        .slice(0, TAMANO_PAGINA)
-        .map(({ visitaId, _count, votos, anclaje, ...fila }) => ({
-          ...fila,
-          verificada: Boolean(visitaId),
-          utiles: _count.votos,
-          votoPropio: Boolean(votos?.length),
-          integridad:
-            anclaje?.estado === 'confirmado'
-              ? { huella: anclaje.huella, transaccion: anclaje.transaccion }
-              : null,
-        })),
+      resenas: filas.slice(0, TAMANO_PAGINA).map(serializarResena),
       hayMas: filas.length > TAMANO_PAGINA,
       total,
       verificadas,
@@ -225,11 +235,26 @@ export class ResenasService {
     };
   }
 
+  async obtener(id: string, usuarioId?: string) {
+    const resena = await this.prisma.cliente.resena.findUnique({
+      where: {
+        id,
+        retiradaEn: null,
+        destino: { estadoEditorial: 'publicada' },
+      },
+      select: seleccionarResena(usuarioId),
+    });
+    if (!resena)
+      throw new NotFoundException('Esta reseña ya no está disponible.');
+    return serializarResena(resena);
+  }
+
   async publicar(
     slug: string,
     perfil: PerfilResenas,
     calificacion: unknown,
     texto: unknown,
+    solicitudId?: unknown,
   ) {
     if (perfil.rol !== 'TURISTA')
       throw new ForbiddenException(
@@ -244,6 +269,16 @@ export class ResenasService {
       throw new BadRequestException('Selecciona una calificación entre 1 y 5.');
     }
     const comentario = typeof texto === 'string' ? texto.trim() : '';
+    if (
+      solicitudId !== undefined &&
+      (typeof solicitudId !== 'string' ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+          solicitudId,
+        ))
+    )
+      throw new BadRequestException(
+        'La solicitud de publicación no es válida.',
+      );
     if (!comentario || Array.from(comentario).length > 2000)
       throw new BadRequestException(
         'Escribe un comentario de 1 a 2000 caracteres.',
@@ -264,16 +299,34 @@ export class ResenasService {
               destinoId: destino.id,
             },
           },
-          select: { id: true, resena: { select: { id: true } } },
+          select: {
+            id: true,
+            resena: {
+              select: {
+                id: true,
+                calificacion: true,
+                comentario: true,
+                retiradaEn: true,
+              },
+            },
+          },
         });
         if (!visita)
           throw new ForbiddenException(
             'Verifica tu visita mediante el QR del destino.',
           );
-        if (visita.resena)
+        if (visita.resena) {
+          if (
+            visita.resena.id === solicitudId &&
+            visita.resena.retiradaEn === null &&
+            visita.resena.calificacion === calificacion &&
+            visita.resena.comentario === comentario
+          )
+            return { id: visita.resena.id };
           throw new ConflictException(
             'Ya publicaste una reseña para esta visita.',
           );
+        }
         await transaccion.$queryRaw`SELECT id FROM munay.usuarios WHERE id = ${perfil.id}::uuid FOR NO KEY UPDATE`;
         const ahora = new Date();
         const recientes = await transaccion.resena.findMany({
@@ -291,7 +344,7 @@ export class ResenasService {
           ahora,
         );
         const sospechosa = riesgo > UMBRAL_RIESGO_RESENA;
-        const id = randomUUID();
+        const id = solicitudId ?? randomUUID();
         const resena = await transaccion.resena.create({
           data: {
             id,
@@ -322,6 +375,7 @@ export class ResenasService {
       },
     );
     this.cacheSentimiento.delete(slug);
+    this.destinos.limpiarCache();
     await this.puntos.acreditar(resenaPublicada.id).catch(() => undefined);
     return resenaPublicada;
   }
@@ -330,7 +384,11 @@ export class ResenasService {
     const cliente = this.prisma.cliente;
     if (
       !(await cliente.resena.findFirst({
-        where: { id: resenaId, retiradaEn: null },
+        where: {
+          id: resenaId,
+          retiradaEn: null,
+          destino: { estadoEditorial: 'publicada' },
+        },
         select: { id: true },
       }))
     ) {

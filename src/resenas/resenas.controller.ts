@@ -60,15 +60,34 @@ export class ResenasController {
     );
   }
 
+  @Get(':id')
+  @Header('Cache-Control', 'private, no-store')
+  async obtener(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const sesion = autorizacion
+      ? await this.autenticacion.validarSesion(autorizacion)
+      : null;
+    return this.resenas.obtener(id, sesion?.perfil.id);
+  }
+
   @Post(':slug')
   async publicar(
     @Param('slug') slug: string,
     @Body('calificacion') calificacion: unknown,
     @Body('comentario') comentario: unknown,
+    @Body('solicitudId') solicitudId: unknown,
     @Headers('authorization') autorizacion?: string,
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
-    return this.resenas.publicar(slug, perfil, calificacion, comentario);
+    return this.resenas.publicar(
+      slug,
+      perfil,
+      calificacion,
+      comentario,
+      solicitudId,
+    );
   }
 
   @Put(':id/util')

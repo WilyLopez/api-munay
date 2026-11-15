@@ -9,5 +9,6 @@ import { DestinosService } from './destinos.service.js';
   imports: [AutenticacionModule, PrismaModule, PuntosModule],
   controllers: [DestinosController],
   providers: [DestinosService],
+  exports: [DestinosService],
 })
 export class DestinosModule {}
