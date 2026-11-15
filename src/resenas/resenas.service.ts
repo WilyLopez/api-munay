@@ -35,12 +35,52 @@ function seleccionarResena(usuarioId?: string) {
 
 @Injectable()
 export class ResenasService {
+  private cacheSentimiento = new Map<
+    string,
+    {
+      resumen: {
+        total: number;
+        positivas: number;
+        neutras: number;
+        negativas: number;
+        temas: string[];
+      };
+      expiraEn: number;
+    }
+  >();
+  private cacheDestinosListado?: {
+    destinos: { nombre: string; slug: string }[];
+    expiraEn: number;
+  };
+
   constructor(
     private readonly prisma: ServicioPrisma,
     private readonly puntos: PuntosService,
   ) {}
 
+  private async obtenerDestinosListado() {
+    const ahora = Date.now();
+    if (
+      this.cacheDestinosListado &&
+      this.cacheDestinosListado.expiraEn > ahora
+    ) {
+      return this.cacheDestinosListado.destinos;
+    }
+    const destinos = await this.prisma.cliente.destino.findMany({
+      select: { nombre: true, slug: true },
+      orderBy: { nombre: 'asc' },
+    });
+    this.cacheDestinosListado = { destinos, expiraEn: ahora + 300_000 };
+    return destinos;
+  }
+
   async resumenSentimiento(slug: string) {
+    const ahora = Date.now();
+    const cacheado = this.cacheSentimiento.get(slug);
+    if (cacheado && cacheado.expiraEn > ahora) {
+      return cacheado.resumen;
+    }
+
     const [resumen] = await this.prisma.cliente.$queryRaw<
       {
         total: number;
@@ -67,6 +107,10 @@ export class ResenasService {
         (count(*) FILTER (WHERE sentimiento = 'NEGATIVA'))::int AS negativas,
         ARRAY(SELECT tema FROM temas_frecuentes ORDER BY frecuencia DESC, tema) AS temas
       FROM visibles`;
+    if (resumen) {
+      if (this.cacheSentimiento.size > 100) this.cacheSentimiento.clear();
+      this.cacheSentimiento.set(slug, { resumen, expiraEn: ahora + 60_000 });
+    }
     return resumen;
   }
 
@@ -131,10 +175,7 @@ export class ResenasService {
             },
           })
         : null,
-      cliente.destino.findMany({
-        select: { nombre: true, slug: true },
-        orderBy: { nombre: 'asc' },
-      }),
+      this.obtenerDestinosListado(),
     ]);
     const total = grupos.reduce((suma, grupo) => suma + grupo._count._all, 0);
     const movimiento = visita?.resena?.movimientosPuntos[0];
@@ -258,6 +299,7 @@ export class ResenasService {
         return resena;
       },
     );
+    this.cacheSentimiento.delete(slug);
     await this.puntos.acreditar(resenaPublicada.id).catch(() => undefined);
     return resenaPublicada;
   }

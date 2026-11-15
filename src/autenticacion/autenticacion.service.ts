@@ -18,6 +18,15 @@ const camposPerfil = {
 @Injectable()
 export class AutenticacionService {
   private clienteSupabase?: SupabaseClient;
+  private cacheTokens = new Map<
+    string,
+    {
+      usuario: any;
+      sesionId: string;
+      expiraEn: number;
+    }
+  >();
+  private cacheActividad = new Map<string, number>();
 
   constructor(private readonly prisma: ServicioPrisma) {}
 
@@ -58,6 +67,10 @@ export class AutenticacionService {
   async cerrarSesion(autorizacion?: string) {
     const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
 
+    const token = autorizacion?.match(/^Bearer (\S+)$/i)?.[1];
+    if (token) this.cacheTokens.delete(token);
+    this.cacheActividad.delete(`${usuario.id}:${sesionId}`);
+
     await this.prisma.cliente.sesionUsuario.updateMany({
       where: { id: sesionId, usuarioId: usuario.id, revocadaEn: null },
       data: { revocadaEn: new Date() },
@@ -66,7 +79,43 @@ export class AutenticacionService {
 
   private async actualizarActividad(usuarioId: string, sesionId: string) {
     const ahora = new Date();
-    const limite = new Date(ahora.getTime() - INACTIVIDAD_MAXIMA_MS);
+    const ahoraMs = ahora.getTime();
+    const limite = new Date(ahoraMs - INACTIVIDAD_MAXIMA_MS);
+    const claveActividad = `${usuarioId}:${sesionId}`;
+    const ultimaGrabada = this.cacheActividad.get(claveActividad) ?? 0;
+    const necesitaActualizar = ahoraMs - ultimaGrabada > 60_000;
+
+    if (!necesitaActualizar) {
+      const [perfil, sesionValida] = await Promise.all([
+        this.prisma.cliente.usuario.findUnique({
+          where: { id: usuarioId },
+          select: camposPerfil,
+        }),
+        this.prisma.cliente.sesionUsuario.findFirst({
+          where: {
+            id: sesionId,
+            usuarioId,
+            revocadaEn: null,
+            ultimaActividadEn: { gt: limite },
+          },
+          select: { id: true },
+        }),
+      ]);
+
+      if (!perfil?.activo) {
+        throw new UnauthorizedException('La cuenta no está disponible.');
+      }
+      if (!sesionValida) {
+        throw new UnauthorizedException(
+          'La sesión no está disponible o expiró.',
+        );
+      }
+
+      return {
+        perfil,
+        venceEn: new Date(ahoraMs + INACTIVIDAD_MAXIMA_MS),
+      };
+    }
 
     return this.prisma.cliente.$transaction(async (transaccion) => {
       const perfil = await transaccion.usuario.findUnique({
@@ -94,9 +143,11 @@ export class AutenticacionService {
         );
       }
 
+      this.cacheActividad.set(claveActividad, ahoraMs);
+
       return {
         perfil,
-        venceEn: new Date(ahora.getTime() + INACTIVIDAD_MAXIMA_MS),
+        venceEn: new Date(ahoraMs + INACTIVIDAD_MAXIMA_MS),
       };
     });
   }
@@ -106,6 +157,12 @@ export class AutenticacionService {
 
     if (!token) {
       throw new UnauthorizedException('Se requiere iniciar sesión.');
+    }
+
+    const ahora = Date.now();
+    const enCache = this.cacheTokens.get(token);
+    if (enCache && enCache.expiraEn > ahora) {
+      return { usuario: enCache.usuario, sesionId: enCache.sesionId };
     }
 
     const { data, error } = await this.supabase.auth.getUser(token);
@@ -136,6 +193,13 @@ export class AutenticacionService {
     if (typeof sesionId !== 'string' || !UUID.test(sesionId)) {
       throw new UnauthorizedException('La sesión no es válida.');
     }
+
+    if (this.cacheTokens.size > 200) this.cacheTokens.clear();
+    this.cacheTokens.set(token, {
+      usuario: data.user,
+      sesionId,
+      expiraEn: ahora + 60_000,
+    });
 
     return { usuario: data.user, sesionId };
   }

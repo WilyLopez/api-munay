@@ -51,6 +51,7 @@ model Usuario {
   votosResenas          VotoResena[]
   movimientosPuntos     MovimientoPuntos[]
 
+  @@index([rol, activo])
   @@map("usuarios")
   @@schema("munay")
 }
@@ -114,6 +115,7 @@ model Destino {
 
   @@index([provincia, categoria])
   @@index([categoria])
+  @@index([ordenPortada])
   @@map("destinos")
   @@schema("munay")
 }
@@ -197,6 +199,8 @@ model Resena {
   anclaje           AnclajeResena?
 
   @@index([destinoId, creadaEn, id])
+  @@index([usuarioId])
+  @@index([puntosPendientes, creadaEn])
   @@map("resenas")
   @@schema("munay")
 }

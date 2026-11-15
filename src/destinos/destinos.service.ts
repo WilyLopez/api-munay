@@ -54,9 +54,32 @@ function serializarDestino<
   };
 }
 
+type DestinoPublico = ReturnType<
+  typeof serializarDestino<
+    Prisma.DestinoGetPayload<{ select: ReturnType<typeof seleccionarDestino> }>
+  >
+>;
+
 @Injectable()
 export class DestinosService {
+  private cachePublico?: {
+    destinos: DestinoPublico[];
+    expiraEn: number;
+  };
+  private cacheDetalles = new Map<
+    string,
+    {
+      destino: DestinoPublico & { totalResenas: number };
+      expiraEn: number;
+    }
+  >();
+
   constructor(private readonly prisma: ServicioPrisma) {}
+
+  limpiarCache() {
+    this.cachePublico = undefined;
+    this.cacheDetalles.clear();
+  }
 
   async obtenerFichaOperativa(slug: string, perfil: PerfilConRol) {
     const ficha = await this.prisma.cliente.destino.findFirst({
@@ -118,18 +141,41 @@ export class DestinosService {
       throw new NotFoundException(
         'El atractivo no está disponible para tu cuenta.',
       );
+    this.limpiarCache();
   }
 
   async listar(usuarioId?: string) {
+    if (!usuarioId) {
+      const ahora = Date.now();
+      if (this.cachePublico && this.cachePublico.expiraEn > ahora) {
+        return this.cachePublico.destinos;
+      }
+    }
+
     const destinos = await this.prisma.cliente.destino.findMany({
       orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
       select: seleccionarDestino(usuarioId),
     });
 
-    return destinos.map(serializarDestino);
+    const resultado = destinos.map(serializarDestino);
+    if (!usuarioId) {
+      this.cachePublico = {
+        destinos: resultado,
+        expiraEn: Date.now() + 60_000,
+      };
+    }
+    return resultado;
   }
 
   async obtener(slug: string, usuarioId?: string) {
+    if (!usuarioId) {
+      const ahora = Date.now();
+      const cacheado = this.cacheDetalles.get(slug);
+      if (cacheado && cacheado.expiraEn > ahora) {
+        return cacheado.destino;
+      }
+    }
+
     const destino = await this.prisma.cliente.destino.findUnique({
       where: { slug },
       select: {
@@ -150,7 +196,18 @@ export class DestinosService {
     }
 
     const { _count, ...detalle } = destino;
-    return { ...serializarDestino(detalle), totalResenas: _count.resenas };
+    const resultado = {
+      ...serializarDestino(detalle),
+      totalResenas: _count.resenas,
+    };
+    if (!usuarioId) {
+      if (this.cacheDetalles.size > 100) this.cacheDetalles.clear();
+      this.cacheDetalles.set(slug, {
+        destino: resultado,
+        expiraEn: Date.now() + 60_000,
+      });
+    }
+    return resultado;
   }
 
   async guardarFavorito(usuarioId: string, destinoId: string) {
@@ -177,6 +234,7 @@ export class DestinosService {
       data: { ordenPortada },
     });
     if (!count) throw new NotFoundException('El destino no está disponible.');
+    this.limpiarCache();
   }
 
   async quitarFavorito(usuarioId: string, destinoId: string) {
