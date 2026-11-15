@@ -6,6 +6,8 @@ import { DestinosModule } from './destinos/destinos.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { VisitasModule } from './visitas/visitas.module.js';
 import { ResenasModule } from './resenas/resenas.module.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
+import { AnclajesModule } from './blockchain/anclajes.module.js';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { ResenasModule } from './resenas/resenas.module.js';
     DestinosModule,
     VisitasModule,
     ResenasModule,
+    UsuariosModule,
+    AnclajesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

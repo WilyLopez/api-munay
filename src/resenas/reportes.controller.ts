@@ -1,0 +1,60 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Headers,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Put,
+  Query,
+} from '@nestjs/common';
+import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
+import { ReportesService } from './reportes.service.js';
+
+@Controller('reportes-resenas')
+export class ReportesController {
+  constructor(
+    private readonly autenticacion: AutenticacionService,
+    private readonly reportes: ReportesService,
+  ) {}
+
+  @Put('resena/:id')
+  @HttpCode(204)
+  async reportar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('motivo') motivo: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    await this.reportes.reportar(id, perfil, motivo);
+  }
+
+  @Get()
+  @Header('Cache-Control', 'private, no-store')
+  async listar(
+    @Query('estado') estado: string,
+    @Query('pagina') pagina: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.reportes.listar(
+      perfil,
+      estado === 'revisados',
+      /^[1-9]\d{0,4}$/.test(pagina) ? Number(pagina) : 1,
+    );
+  }
+
+  @Put(':id/revision')
+  @HttpCode(204)
+  async revisar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('decision') decision: unknown,
+    @Body('motivo') motivo: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    await this.reportes.revisar(id, perfil, decision, motivo);
+  }
+}

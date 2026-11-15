@@ -73,10 +73,28 @@ export class VisitasController {
   async verificar(
     @Body('codigo') codigo: unknown,
     @Body('destino') destino: unknown,
+    @Body('ubicacion') ubicacion: unknown,
     @Headers('authorization') autorizacion?: string,
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
     return this.visitas.verificar(
+      perfil,
+      codigo,
+      typeof destino === 'string' ? destino : undefined,
+      ubicacion,
+    );
+  }
+
+  @Post('verificar/preparar')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  async prepararVerificacion(
+    @Body('codigo') codigo: unknown,
+    @Body('destino') destino: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.visitas.prepararVerificacion(
       perfil,
       codigo,
       typeof destino === 'string' ? destino : undefined,

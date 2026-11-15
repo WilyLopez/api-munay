@@ -10,6 +10,7 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "db:verify": "node --env-file-if-exists=.env dist/prisma/verificar-conexion.js",
+    "db:sentimiento": "node --env-file-if-exists=.env dist/resenas/clasificar-resenas-previas.js",
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -33,7 +34,8 @@
     "@supabase/supabase-js": "^2.119.0",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "viem": "^2.57.19"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",

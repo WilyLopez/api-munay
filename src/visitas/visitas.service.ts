@@ -6,8 +6,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma, RolUsuario } from '../generated/prisma/client.js';
+import {
+  alcanceAdministrador,
+  type PerfilConRol as Perfil,
+} from '../autenticacion/alcance-administrador.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { ServicioPrisma } from '../prisma/prisma.service.js';
+import { RADIO_VISITA_METROS, validarGeocerca } from './geocerca.js';
 
 const VIGENCIA_MS = 60_000;
 const PREFIJO = 'munay:visita:';
@@ -16,12 +21,21 @@ const FORMATO_CODIGO =
 const TAMANO_PAGINA = 25;
 const camposDestino = { id: true, nombre: true, slug: true } as const;
 const camposVisita = { id: true, verificadaEn: true } as const;
-type Perfil = { id: string; rol: RolUsuario };
 
-function alcanceAdministrador(perfil: Perfil): Prisma.DestinoWhereInput {
-  if (perfil.rol === 'SUPER_ADMIN') return {};
-  if (perfil.rol !== 'ADMIN_DESTINO') throw new ForbiddenException();
-  return { administradores: { some: { usuarioId: perfil.id } } };
+function comprobarVigencia(
+  codigo: { usadoEn: Date | null; venceEn: Date; anuladoEn: Date | null },
+  ahora: Date,
+) {
+  if (codigo.usadoEn)
+    throw new ConflictException(
+      'Este QR ya fue usado. Escanea el código nuevo.',
+    );
+  if (codigo.anuladoEn)
+    throw new GoneException(
+      'El QR fue reemplazado. Escanea el código vigente.',
+    );
+  if (codigo.venceEn <= ahora)
+    throw new GoneException('El QR expiró. Escanea el código vigente.');
 }
 
 function bloquearDestino(
@@ -151,6 +165,11 @@ export class VisitasService {
       (_, indice) => new Date(Date.UTC(anio, mes - meses + indice, 1, 5)),
     );
     const desde = periodos[0];
+    const filtroResenas = {
+      destinoId: destino.id,
+      retiradaEn: null,
+      creadaEn: { gte: desde, lte: ahora },
+    };
     const cliente = this.prisma.cliente;
     const [visitas, resumen, recientes] = await Promise.all([
       cliente.$queryRaw<{ mes: string; total: number }[]>`
@@ -161,12 +180,12 @@ export class VisitasService {
         GROUP BY 1
       `,
       cliente.resena.aggregate({
-        where: { destinoId: destino.id, creadaEn: { gte: desde, lte: ahora } },
+        where: filtroResenas,
         _avg: { calificacion: true },
         _count: { _all: true },
       }),
       cliente.resena.findMany({
-        where: { destinoId: destino.id, creadaEn: { gte: desde, lte: ahora } },
+        where: filtroResenas,
         select: {
           id: true,
           usuario: { select: { nombreCompleto: true } },
@@ -202,7 +221,7 @@ export class VisitasService {
     };
   }
 
-  async verificar(perfil: Perfil, texto: unknown, slug?: string) {
+  private async obtenerCodigo(perfil: Perfil, texto: unknown, slug?: string) {
     if (perfil.rol !== 'TURISTA')
       throw new ForbiddenException(
         'La verificación está disponible para cuentas de turista.',
@@ -216,7 +235,15 @@ export class VisitasService {
 
     const origen = await this.prisma.cliente.codigoVisita.findUnique({
       where: { id: codigoId },
-      select: { destino: { select: camposDestino } },
+      select: {
+        id: true,
+        usadoEn: true,
+        venceEn: true,
+        anuladoEn: true,
+        destino: {
+          select: { ...camposDestino, latitud: true, longitud: true },
+        },
+      },
     });
     if (!origen || (slug && origen.destino.slug !== slug)) {
       throw new BadRequestException(
@@ -224,7 +251,52 @@ export class VisitasService {
       );
     }
 
-    const destino = origen.destino;
+    return origen;
+  }
+
+  private visitaExistente(
+    cliente: Prisma.TransactionClient,
+    usuarioId: string,
+    destinoId: string,
+  ) {
+    return cliente.visitaVerificada.findUnique({
+      where: { usuarioId_destinoId: { usuarioId, destinoId } },
+      select: camposVisita,
+    });
+  }
+
+  async prepararVerificacion(perfil: Perfil, texto: unknown, slug?: string) {
+    const codigo = await this.obtenerCodigo(perfil, texto, slug);
+    const destino = codigo.destino;
+    const visita = await this.visitaExistente(
+      this.prisma.cliente,
+      perfil.id,
+      destino.id,
+    );
+    if (visita)
+      return {
+        estado: 'verificada',
+        datos: { visita, destino, yaVerificada: true },
+      } as const;
+    comprobarVigencia(codigo, new Date());
+    return {
+      estado: 'ubicacion',
+      destino,
+      radioMetros: RADIO_VISITA_METROS,
+    } as const;
+  }
+
+  async verificar(
+    perfil: Perfil,
+    texto: unknown,
+    slug?: string,
+    ubicacion?: unknown,
+  ) {
+    const { id: codigoId, destino } = await this.obtenerCodigo(
+      perfil,
+      texto,
+      slug,
+    );
     return this.prisma.cliente.$transaction(async (transaccion) => {
       await bloquearDestino(transaccion, destino.id);
       const codigo = await transaccion.codigoVisita.findUnique({
@@ -232,25 +304,15 @@ export class VisitasService {
       });
       if (!codigo)
         throw new BadRequestException('El código ya no está disponible.');
-      const anterior = await transaccion.visitaVerificada.findUnique({
-        where: {
-          usuarioId_destinoId: { usuarioId: perfil.id, destinoId: destino.id },
-        },
-        select: camposVisita,
-      });
+      const anterior = await this.visitaExistente(
+        transaccion,
+        perfil.id,
+        destino.id,
+      );
       if (anterior) return { visita: anterior, destino, yaVerificada: true };
-      if (codigo.usadoEn)
-        throw new ConflictException(
-          'Este QR ya fue usado. Escanea el código nuevo.',
-        );
-
       const ahora = new Date();
-      if (codigo.venceEn <= ahora)
-        throw new GoneException('El QR expiró. Escanea el código vigente.');
-      if (codigo.anuladoEn)
-        throw new GoneException(
-          'El QR fue reemplazado. Escanea el código vigente.',
-        );
+      comprobarVigencia(codigo, ahora);
+      const geocerca = validarGeocerca(destino, ubicacion);
 
       const visita = await transaccion.visitaVerificada.create({
         data: {
@@ -265,7 +327,7 @@ export class VisitasService {
         where: { id: codigoId },
         data: { usadoEn: ahora },
       });
-      return { visita, destino, yaVerificada: false };
+      return { visita, destino, geocerca, yaVerificada: false };
     });
   }
 }

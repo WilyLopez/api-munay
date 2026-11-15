@@ -22,6 +22,12 @@ export class ResenasController {
     private readonly resenas: ResenasService,
   ) {}
 
+  @Get('sentimiento/:slug')
+  @Header('Cache-Control', 'no-store')
+  resumenSentimiento(@Param('slug') slug: string) {
+    return this.resenas.resumenSentimiento(slug);
+  }
+
   @Get()
   @Header('Cache-Control', 'private, no-store')
   async listar(
