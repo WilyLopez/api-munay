@@ -334,10 +334,16 @@ export class DestinosService {
     const destinos = await this.prisma.cliente.destino.findMany({
       where: { estadoEditorial: 'publicada' },
       orderBy: [{ nombre: 'asc' }, { id: 'asc' }],
-      select: seleccionarDestino(usuarioId),
+      select: {
+        ...seleccionarDestino(usuarioId),
+        _count: { select: { resenas: { where: { retiradaEn: null } } } },
+      },
     });
 
-    const resultado = destinos.map(serializarDestino);
+    const resultado = destinos.map(({ _count, ...destino }) => ({
+      ...serializarDestino(destino),
+      totalResenas: _count.resenas,
+    }));
     if (!usuarioId) {
       this.cachePublico = {
         destinos: resultado,
