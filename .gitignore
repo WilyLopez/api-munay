@@ -3,6 +3,7 @@
 /coverage/
 /.vercel/
 /src/generated/prisma/
+/.agents
 *.log
 *.tsbuildinfo
 .env

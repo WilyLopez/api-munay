@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "skills": {
+    "alchemy-api": {
+      "source": "alchemyplatform/skills",
+      "sourceType": "github",
+      "skillPath": "skills/alchemy-api/SKILL.md",
+      "computedHash": "e24f88151b87da8e1c0e991af31f7d8fb8f73cd429913d270e2645738a79c08e"
+    }
+  }
+}

@@ -103,19 +103,33 @@ export function configurarSepolia() {
   }
   const lectura = createPublicClient({ chain: sepolia, transport });
   const escritura = createWalletClient({ account, chain: sepolia, transport });
+  const direccion = contrato;
+
+  async function consultarFirmante() {
+    return lectura.readContract({
+      address: direccion,
+      abi,
+      functionName: 'firmante',
+    });
+  }
 
   return {
     contrato,
+    async diagnosticar() {
+      const red = await lectura.getChainId();
+      if (red !== sepolia.id) return { estado: 'red-incorrecta', red } as const;
+      const autorizado = await consultarFirmante();
+      if (autorizado.toLowerCase() !== account.address.toLowerCase())
+        return { estado: 'firmante-incorrecto' } as const;
+      const saldo = await lectura.getBalance({ address: account.address });
+      return { estado: saldo === 0n ? 'sin-saldo' : 'lista', saldo } as const;
+    },
     async comprobarRed() {
       if ((await lectura.getChainId()) !== sepolia.id)
         throw new Error('Red incorrecta.');
     },
     async firmar(huella: Hex) {
-      const autorizado = await lectura.readContract({
-        address: contrato,
-        abi,
-        functionName: 'firmante',
-      });
+      const autorizado = await consultarFirmante();
       if (autorizado.toLowerCase() !== account.address.toLowerCase())
         throw new Error('Firmante incorrecto.');
       const solicitud = await escritura.prepareTransactionRequest({

@@ -11,6 +11,7 @@
     "prisma:generate": "prisma generate",
     "db:verify": "node --env-file-if-exists=.env dist/prisma/verificar-conexion.js",
     "db:sentimiento": "node --env-file-if-exists=.env dist/resenas/clasificar-resenas-previas.js",
+    "blockchain:verify": "node --env-file-if-exists=.env dist/blockchain/verificar-configuracion-sepolia.js",
     "build": "nest build",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
