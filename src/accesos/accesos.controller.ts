@@ -69,6 +69,12 @@ export class AccesosController {
     );
   }
 
+  @Get('invitacion/:token')
+  @Header('Cache-Control', 'private, no-store')
+  async consultarInvitacion(@Param('token') token: string) {
+    return this.accesos.consultarInvitacion(token);
+  }
+
   @Post('invitaciones')
   @Header('Cache-Control', 'private, no-store')
   async invitar(

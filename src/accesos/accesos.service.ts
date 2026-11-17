@@ -40,6 +40,17 @@ function texto(valor: unknown, minimo: number, maximo: number, nombre: string) {
   return resultado;
 }
 
+function escaparHtml(valor: string) {
+  const entidades: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return valor.replace(/[&<>"']/g, (caracter) => entidades[caracter]);
+}
+
 function propuestaValida(valor: unknown) {
   if (!valor || typeof valor !== 'object' || Array.isArray(valor))
     throw new BadRequestException('Completa los datos del nuevo atractivo.');
@@ -288,7 +299,9 @@ export class AccesosService {
       );
     }
     const token = randomBytes(32).toString('base64url');
-    enlace.hash = nuevo ? `${token}.nuevo` : token;
+    const valorToken = nuevo ? `${token}.nuevo` : token;
+    enlace.searchParams.set('token', valorToken);
+    enlace.hash = valorToken;
     const venceEn = new Date(Date.now() + 72 * 60 * 60 * 1000);
     const destino = await this.transaccion(async (tx) => {
       await this.confirmarSuperAdmin(tx, actorId);
@@ -325,6 +338,67 @@ export class AccesosService {
     let enviado = false;
     if (clave && from) {
       try {
+        const nombreDestino = escaparHtml(destino?.nombre ?? 'un nuevo atractivo');
+        const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invitación a Munay</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f4ea; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #173b32;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8f4ea; padding: 40px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #dce3da; box-shadow: 0 4px 16px rgba(23, 59, 50, 0.06);">
+          <tr>
+            <td style="background-color: #174238; padding: 32px 40px; text-align: left;">
+              <span style="font-size: 26px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px;">munay<span style="color: #c86a52;">.</span></span>
+              <p style="margin: 6px 0 0; color: #e0eee7; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;">Invitación oficial de gestión</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px 40px;">
+              <h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #173b32; line-height: 1.3;">
+                ${destino ? `Gestiona ${nombreDestino} en Munay` : 'Registra y administra un nuevo atractivo en Munay'}
+              </h1>
+              <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #465a50;">
+                Has sido invitado por el equipo de administración para coordinar la presencia oficial de <strong>${nombreDestino}</strong> en la plataforma cultural de Lambayeque.
+              </p>
+              <div style="background-color: #f4f5ef; border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; border-left: 4px solid #174238;">
+                <p style="margin: 0; font-size: 13px; font-weight: 600; color: #174238; text-transform: uppercase; letter-spacing: 0.5px;">Herramientas incluidas:</p>
+                <ul style="margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: #465a50; line-height: 1.6;">
+                  <li>Generación y control de códigos QR para visitas verificadas</li>
+                  <li>Actualización de ficha de horarios, rutas y tarifas</li>
+                  <li>Métricas de afluencia y atención de reseñas comunitarias</li>
+                </ul>
+              </div>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 30px 0;">
+                <tr>
+                  <td align="center" style="border-radius: 12px; background-color: #174238;">
+                    <a href="${escaparHtml(enlace.href)}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 12px;">Aceptar invitación y configurar acceso</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 0; font-size: 13px; color: #768a80; line-height: 1.5;">
+                Este enlace es exclusivo para <strong>${escaparHtml(correo)}</strong> y permanecerá activo durante las próximas 72 horas.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f4f5ef; padding: 20px 40px; border-top: 1px solid #dce3da; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #768a80;">
+                Munay · Plataforma de turismo y patrimonio cultural de Lambayeque, Perú.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
         const respuesta = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -336,7 +410,8 @@ export class AccesosService {
             from,
             to: [correo],
             subject: 'Invitación para gestionar un atractivo en Munay',
-            text: `Te invitamos a ${destino ? `gestionar ${destino.nombre}` : 'registrar un nuevo destino'} en Munay. Inicia sesión con este correo y abre el enlace para aceptar. Es válido durante 72 horas.\n\n${enlace.href}`,
+            text: `Te invitamos a ${destino ? `gestionar ${destino.nombre}` : 'registrar un nuevo atractivo'} en Munay.\n\nAccede con el correo ${correo} antes de 72 horas abriendo este enlace:\n${enlace.href}`,
+            html,
           }),
         });
         enviado = respuesta.ok;
@@ -345,6 +420,54 @@ export class AccesosService {
       }
     }
     return { enlace: enlace.href, enviado };
+  }
+
+  async consultarInvitacion(token: string) {
+    const limpio = typeof token === 'string' ? token.split('.')[0] : '';
+    if (!limpio || !/^[\w-]{43}$/.test(limpio)) {
+      throw new BadRequestException('El enlace de invitación no es válido.');
+    }
+    const hash = hashToken(limpio);
+    const fila = await this.prisma.cliente.accesoEncargado.findUnique({
+      where: { tokenHash: hash },
+      select: {
+        id: true,
+        tipo: true,
+        estado: true,
+        correo: true,
+        venceEn: true,
+        propuesta: true,
+        destino: {
+          select: {
+            id: true,
+            nombre: true,
+            ubicacion: true,
+            imagenUrl: true,
+            provincia: true,
+            categoria: true,
+            descripcion: true,
+          },
+        },
+      },
+    });
+    if (!fila) {
+      throw new NotFoundException('La invitación no existe o ya no es válida.');
+    }
+    const vencida = Boolean(fila.venceEn && fila.venceEn <= new Date());
+    const activa = fila.estado === 'pendiente' && !vencida;
+    return {
+      valida: activa,
+      estado: fila.estado,
+      vencida,
+      correo: fila.correo,
+      nuevo: Boolean(
+        fila.propuesta &&
+          typeof fila.propuesta === 'object' &&
+          'alta' in fila.propuesta,
+      ),
+      destino: fila.destino,
+      venceEn: fila.venceEn,
+    };
   }
 
   async aceptar(persona: Persona, token: unknown, propuesta?: unknown) {
