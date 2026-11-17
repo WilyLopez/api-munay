@@ -122,12 +122,12 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       : Prisma.empty;
     await this.prisma.cliente.$executeRaw`
       WITH pendientes AS (
-        SELECT r.id, r.usuario_id FROM munay.resenas r
+        SELECT r.id, r.usuario_id, r.foto_url, r.selfie_declarada FROM munay.resenas r
         WHERE r.puntos_pendientes AND r.visita_id IS NOT NULL AND r.retirada_en IS NULL ${filtro}
         ORDER BY r.creada_en, r.id LIMIT 100 FOR UPDATE OF r SKIP LOCKED
       ), acreditaciones AS (
         INSERT INTO munay.movimientos_puntos (id, usuario_id, resena_id, tipo, puntos)
-        SELECT gen_random_uuid(), usuario_id, id, 'acreditacion', ${PUNTOS_RESENA}
+        SELECT gen_random_uuid(), usuario_id, id, 'acreditacion', ${PUNTOS_RESENA} + CASE WHEN foto_url IS NOT NULL AND selfie_declarada THEN 5 ELSE 0 END
         FROM pendientes
         ON CONFLICT (resena_id, tipo) DO NOTHING
       )

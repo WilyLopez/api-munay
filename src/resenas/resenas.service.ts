@@ -25,10 +25,14 @@ function seleccionarResena(usuarioId?: string) {
     calificacion: true,
     creadaEn: true,
     visitaId: true,
+    visita: { select: { verificadaEn: true } },
+    fotoUrl: true,
     usuario: { select: { nombreCompleto: true } },
     destino: { select: { nombre: true, slug: true } },
     anclaje: { select: { huella: true, estado: true, transaccion: true } },
-    _count: { select: { votos: true } },
+    _count: {
+      select: { votos: true, respuestas: { where: { retiradaEn: null } } },
+    },
     votos: usuarioId
       ? { where: { usuarioId }, select: { usuarioId: true } }
       : false,
@@ -40,11 +44,14 @@ function serializarResena({
   _count,
   votos,
   anclaje,
+  visita,
   ...fila
 }: Prisma.ResenaGetPayload<{ select: ReturnType<typeof seleccionarResena> }>) {
   return {
     ...fila,
     verificada: Boolean(visitaId),
+    fechaVisita: visita?.verificadaEn ?? null,
+    totalRespuestas: _count.respuestas,
     utiles: _count.votos,
     votoPropio: Boolean(votos?.length),
     integridad:
@@ -187,6 +194,7 @@ export class ResenasService {
               },
             },
             select: {
+              verificadaEn: true,
               resena: {
                 select: {
                   retiradaEn: true,
@@ -205,6 +213,10 @@ export class ResenasService {
     const movimiento = visita?.resena?.movimientosPuntos[0];
     return {
       destinos,
+      fechaVisita: visita?.verificadaEn ?? null,
+      puntosResena: 10,
+      puntosSelfie: 5,
+      puedeResponder: perfil?.rol === 'TURISTA',
       resenas: filas.slice(0, TAMANO_PAGINA).map(serializarResena),
       hayMas: filas.length > TAMANO_PAGINA,
       total,
@@ -255,6 +267,9 @@ export class ResenasService {
     calificacion: unknown,
     texto: unknown,
     solicitudId?: unknown,
+    foto?: unknown,
+    selfie?: unknown,
+    consentimientoFoto?: unknown,
   ) {
     if (perfil.rol !== 'TURISTA')
       throw new ForbiddenException(
@@ -283,6 +298,54 @@ export class ResenasService {
       throw new BadRequestException(
         'Escribe un comentario de 1 a 2000 caracteres.',
       );
+    if (selfie !== undefined && typeof selfie !== 'boolean')
+      throw new BadRequestException('Revisa la declaración de la selfie.');
+    if (selfie === true && !foto)
+      throw new BadRequestException(
+        'Adjunta tu selfie para recibir los puntos adicionales.',
+      );
+    let fotoUrl: string | null = null;
+    if (foto !== undefined && foto !== null && foto !== '') {
+      if (consentimientoFoto !== true)
+        throw new BadRequestException(
+          'Autoriza la publicación de tu foto para continuar.',
+        );
+      if (
+        typeof foto !== 'string' ||
+        !new RegExp(
+          '^' + perfil.id + '/[a-f0-9-]{36}/[a-f0-9-]{36}\\.(jpg|png|webp)$',
+        ).test(foto)
+      ) {
+        throw new BadRequestException('La foto no pertenece a esta cuenta.');
+      }
+      const [objeto] = await this.prisma.cliente.$queryRaw<
+        { destinoId: string }[]
+      >`
+        SELECT (string_to_array(o.name, '/'))[2] AS "destinoId"
+        FROM storage.objects o
+        WHERE o.bucket_id = 'resenas' AND o.name = ${foto}
+          AND o.owner_id = ${perfil.id}
+          AND o.metadata->>'mimetype' IN ('image/jpeg', 'image/png', 'image/webp')
+          AND (o.metadata->>'size')::bigint BETWEEN 1 AND 5242880
+        LIMIT 1
+      `;
+      if (!objeto)
+        throw new BadRequestException(
+          'Sube una foto JPG, PNG o WebP de hasta 5 MB.',
+        );
+      const destinoFoto = await this.prisma.cliente.destino.findUnique({
+        where: { slug, estadoEditorial: 'publicada' },
+        select: { id: true },
+      });
+      if (!destinoFoto || objeto.destinoId !== destinoFoto.id)
+        throw new BadRequestException('La foto no corresponde a este destino.');
+      const base = process.env.SUPABASE_URL;
+      if (!base)
+        throw new BadRequestException(
+          'Las fotos no están disponibles en este momento.',
+        );
+      fotoUrl = new URL('/storage/v1/object/public/resenas/' + foto, base).href;
+    }
     const resenaPublicada = await this.prisma.cliente.$transaction(
       async (transaccion) => {
         const destino = await transaccion.destino.findUnique({
@@ -307,6 +370,8 @@ export class ResenasService {
                 calificacion: true,
                 comentario: true,
                 retiradaEn: true,
+                fotoUrl: true,
+                selfieDeclarada: true,
               },
             },
           },
@@ -320,7 +385,9 @@ export class ResenasService {
             visita.resena.id === solicitudId &&
             visita.resena.retiradaEn === null &&
             visita.resena.calificacion === calificacion &&
-            visita.resena.comentario === comentario
+            visita.resena.comentario === comentario &&
+            (visita.resena.fotoUrl ?? null) === fotoUrl &&
+            Boolean(visita.resena.selfieDeclarada) === (selfie === true)
           )
             return { id: visita.resena.id };
           throw new ConflictException(
@@ -355,6 +422,8 @@ export class ResenasService {
             riesgo,
             calificacion,
             comentario,
+            fotoUrl,
+            selfieDeclarada: selfie === true,
             ...(sospechosa && { reportes: { create: { riesgo, motivo } } }),
             anclaje: {
               create: {
