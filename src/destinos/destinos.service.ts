@@ -289,6 +289,35 @@ export class DestinosService {
     this.limpiarCache();
   }
 
+  async cambiarVisibilidad(slug: string, perfil: PerfilConRol, habilitar: unknown) {
+    if (typeof habilitar !== 'boolean')
+      throw new BadRequestException('Indica si deseas habilitar el atractivo.');
+    const alcance = { slug, ...alcanceAdministrador(perfil) };
+    const { count } = await this.prisma.cliente.destino.updateMany({
+      where: {
+        ...alcance,
+        estadoEditorial: habilitar ? 'borrador' : 'publicada',
+      },
+      data: {
+        estadoEditorial: habilitar ? 'publicada' : 'borrador',
+        ...(habilitar && { verificado: false }),
+      },
+    });
+    if (!count) {
+      const actual = await this.prisma.cliente.destino.findFirst({
+        where: alcance,
+        select: { estadoEditorial: true },
+      });
+      if (!actual)
+        throw new NotFoundException('El atractivo no está disponible para tu cuenta.');
+      if (actual.estadoEditorial === (habilitar ? 'publicada' : 'borrador')) return;
+      throw new ConflictException(
+        'La ficha está en revisión o archivada. Contacta al equipo de Munay para cambiar su visibilidad.',
+      );
+    }
+    this.limpiarCache();
+  }
+
   async revisarFicha(slug: string, perfil: PerfilConRol, estado: unknown) {
     if (perfil.rol !== 'SUPER_ADMIN') throw new ForbiddenException();
     if (estado === 'verificar' || estado === 'quitar_verificacion') {

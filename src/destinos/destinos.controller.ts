@@ -123,6 +123,17 @@ export class DestinosController {
     await this.destinos.actualizarFichaOperativa(slug, perfil, entrada);
   }
 
+  @Put('administracion/:slug/visibilidad')
+  @HttpCode(204)
+  async cambiarVisibilidad(
+    @Param('slug') slug: string,
+    @Body('habilitar') habilitar: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    await this.destinos.cambiarVisibilidad(slug, perfil, habilitar);
+  }
+
   @Put('administracion/:slug/estado')
   @HttpCode(204)
   async revisarFicha(
