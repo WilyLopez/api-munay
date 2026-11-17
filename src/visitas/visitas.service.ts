@@ -15,6 +15,7 @@ import { ServicioPrisma } from '../prisma/prisma.service.js';
 import { RADIO_VISITA_METROS, validarGeocerca } from './geocerca.js';
 
 const VIGENCIA_MS = 60_000;
+const VIGENCIA_PERMISO_MS = 5 * 60_000;
 const PREFIJO = 'munay:visita:';
 const FORMATO_CODIGO =
   /^munay:visita:([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/;
@@ -301,22 +302,47 @@ export class VisitasService {
   async prepararVerificacion(perfil: Perfil, texto: unknown, slug?: string) {
     const codigo = await this.obtenerCodigo(perfil, texto, slug);
     const destino = codigo.destino;
-    const visita = await this.visitaExistente(
-      this.prisma.cliente,
-      perfil.id,
-      destino.id,
-    );
-    if (visita)
+    return this.prisma.cliente.$transaction(async (transaccion) => {
+      await bloquearDestino(transaccion, destino.id);
+      const visita = await this.visitaExistente(
+        transaccion,
+        perfil.id,
+        destino.id,
+      );
+      if (visita)
+        return {
+          estado: 'verificada',
+          datos: { visita, destino, yaVerificada: true },
+        } as const;
+
+      const datosPermiso = { codigoId: codigo.id, usuarioId: perfil.id };
+      const ahora = new Date();
+      const permiso = await transaccion.permisoVisita.findUnique({
+        where: { codigoId_usuarioId: datosPermiso },
+      });
+      if (!permiso || permiso.venceEn <= ahora) {
+        const vigente = await transaccion.codigoVisita.findUnique({
+          where: { id: codigo.id },
+        });
+        if (!vigente)
+          throw new BadRequestException('El código ya no está disponible.');
+        comprobarVigencia(vigente, ahora);
+        await transaccion.permisoVisita.deleteMany({
+          where: { usuarioId: perfil.id, venceEn: { lte: ahora } },
+        });
+        await transaccion.permisoVisita.create({
+          data: {
+            ...datosPermiso,
+            venceEn: new Date(ahora.getTime() + VIGENCIA_PERMISO_MS),
+          },
+        });
+      }
       return {
-        estado: 'verificada',
-        datos: { visita, destino, yaVerificada: true },
+        estado: 'ubicacion',
+        destino,
+        radioMetros: RADIO_VISITA_METROS,
       } as const;
-    comprobarVigencia(codigo, new Date());
-    return {
-      estado: 'ubicacion',
-      destino,
-      radioMetros: RADIO_VISITA_METROS,
-    } as const;
+    });
   }
 
   async verificar(
@@ -332,19 +358,21 @@ export class VisitasService {
     );
     return this.prisma.cliente.$transaction(async (transaccion) => {
       await bloquearDestino(transaccion, destino.id);
-      const codigo = await transaccion.codigoVisita.findUnique({
-        where: { id: codigoId },
-      });
-      if (!codigo)
-        throw new BadRequestException('El código ya no está disponible.');
       const anterior = await this.visitaExistente(
         transaccion,
         perfil.id,
         destino.id,
       );
       if (anterior) return { visita: anterior, destino, yaVerificada: true };
+      const permisoId = { codigoId, usuarioId: perfil.id };
+      const permiso = await transaccion.permisoVisita.findUnique({
+        where: { codigoId_usuarioId: permisoId },
+      });
       const ahora = new Date();
-      comprobarVigencia(codigo, ahora);
+      if (!permiso || permiso.venceEn <= ahora)
+        throw new GoneException(
+          'El permiso para confirmar la visita venció o no se inició. Escanea el QR vigente.',
+        );
       const geocerca = validarGeocerca(destino, ubicacion);
 
       const visita = await transaccion.visitaVerificada.create({
@@ -356,9 +384,8 @@ export class VisitasService {
         },
         select: camposVisita,
       });
-      await transaccion.codigoVisita.update({
-        where: { id: codigoId },
-        data: { usadoEn: ahora },
+      await transaccion.permisoVisita.delete({
+        where: { codigoId_usuarioId: permisoId },
       });
       return { visita, destino, geocerca, yaVerificada: false };
     });

@@ -111,6 +111,8 @@ export class DestinosService {
         provincia: true,
         categoria: true,
         estadoEditorial: true,
+        imagenUrl: true,
+        calificacionPromedio: true,
         _count: {
           select: { visitas: true, resenas: { where: { retiradaEn: null } } },
         },

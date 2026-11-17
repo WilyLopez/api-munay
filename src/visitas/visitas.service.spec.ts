@@ -77,12 +77,10 @@ describe('Período de las estadísticas del atractivo', () => {
         destino: { findFirst: vi.fn().mockResolvedValue(destino) },
         $queryRaw: vi.fn().mockResolvedValue([{ mes: '2026-10', total: 3 }]),
         resena: {
-          aggregate: vi
-            .fn()
-            .mockResolvedValue({
-              _avg: { calificacion: 4.5 },
-              _count: { _all: 2 },
-            }),
+          aggregate: vi.fn().mockResolvedValue({
+            _avg: { calificacion: 4.5 },
+            _count: { _all: 2 },
+          }),
           findMany: vi.fn().mockResolvedValue([]),
         },
       };
@@ -119,6 +117,145 @@ describe('Período de las estadísticas del atractivo', () => {
         totalResenas: 2,
         promedio: 4.5,
       });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('Permisos individuales de visita', () => {
+  it('admite dos turistas con el mismo QR y protege el plazo, la ubicación y los reintentos', async () => {
+    vi.useFakeTimers();
+    try {
+      const inicio = new Date('2026-11-17T15:00:00Z');
+      vi.setSystemTime(inicio);
+      const id = '11111111-1111-4111-8111-111111111111';
+      const texto = `munay:visita:${id}`;
+      const lugar = { ...destino, latitud: -6.7, longitud: -79.8 };
+      const ubicacion = { latitud: -6.7, longitud: -79.8, precision: 10 };
+      const codigo = {
+        id,
+        destino: lugar,
+        usadoEn: null,
+        anuladoEn: null,
+        venceEn: new Date(inicio.getTime() + 60_000),
+      };
+      const turista = (id: string) => ({ id, rol: 'TURISTA' as const });
+      const primero = turista('primero');
+      const segundo = turista('segundo');
+      const tercero = turista('tercero');
+      const foraneo = turista('foraneo');
+      const permisos = new Map<string, { venceEn: Date }>();
+      const visitas = new Map<string, { id: string; verificadaEn: Date }>();
+      const codigos = {
+        findUnique: vi.fn().mockResolvedValue(codigo),
+        update: vi.fn(),
+      };
+      const crearVisita = vi.fn(
+        ({ data }: { data: { usuarioId: string; verificadaEn: Date } }) => {
+          const visita = {
+            id: data.usuarioId,
+            verificadaEn: data.verificadaEn,
+          };
+          visitas.set(data.usuarioId, visita);
+          return visita;
+        },
+      );
+      const tx = {
+        $queryRaw: vi.fn(),
+        codigoVisita: codigos,
+        permisoVisita: {
+          findUnique: ({
+            where,
+          }: {
+            where: { codigoId_usuarioId: { usuarioId: string } };
+          }) => permisos.get(where.codigoId_usuarioId.usuarioId),
+          deleteMany: vi.fn(),
+          create: ({ data }: { data: { usuarioId: string; venceEn: Date } }) =>
+            permisos.set(data.usuarioId, data),
+          delete: ({
+            where,
+          }: {
+            where: { codigoId_usuarioId: { usuarioId: string } };
+          }) => permisos.delete(where.codigoId_usuarioId.usuarioId),
+        },
+        visitaVerificada: {
+          findUnique: ({
+            where,
+          }: {
+            where: { usuarioId_destinoId: { usuarioId: string } };
+          }) => visitas.get(where.usuarioId_destinoId.usuarioId),
+          create: crearVisita,
+        },
+      };
+      const cliente = {
+        ...tx,
+        $transaction: <T>(accion: (tx: unknown) => Promise<T>) => accion(tx),
+      };
+      const servicio = new VisitasService({
+        cliente,
+      } as unknown as ServicioPrisma);
+
+      for (const perfil of [primero, segundo, tercero]) {
+        await expect(
+          servicio.prepararVerificacion(perfil, texto),
+        ).resolves.toMatchObject({
+          estado: 'ubicacion',
+        });
+      }
+      await expect(
+        servicio.verificar(primero, texto, lugar.slug, ubicacion),
+      ).resolves.toMatchObject({
+        yaVerificada: false,
+      });
+      vi.setSystemTime(new Date(inicio.getTime() + 75_000));
+      await expect(
+        servicio.prepararVerificacion(foraneo, texto),
+      ).rejects.toThrow('El QR expiró');
+      await expect(
+        servicio.verificar(foraneo, texto, lugar.slug, ubicacion),
+      ).rejects.toThrow('El permiso');
+      await expect(
+        servicio.prepararVerificacion(segundo, texto),
+      ).resolves.toMatchObject({
+        estado: 'ubicacion',
+      });
+      expect(permisos.get(segundo.id)?.venceEn).toEqual(
+        new Date(inicio.getTime() + 300_000),
+      );
+      await expect(
+        servicio.verificar(segundo, texto, lugar.slug, {
+          ...ubicacion,
+          latitud: -6.8,
+        }),
+      ).rejects.toThrow('Acércate');
+      await expect(
+        servicio.verificar(segundo, texto, lugar.slug, ubicacion),
+      ).resolves.toMatchObject({
+        yaVerificada: false,
+      });
+      expect(permisos.has(segundo.id)).toBe(false);
+
+      vi.setSystemTime(new Date(inicio.getTime() + 300_000));
+      await expect(
+        servicio.verificar(tercero, texto, lugar.slug, ubicacion),
+      ).rejects.toThrow('El permiso');
+      await expect(
+        servicio.verificar(segundo, texto, lugar.slug, ubicacion),
+      ).resolves.toMatchObject({
+        yaVerificada: true,
+      });
+      expect(crearVisita).toHaveBeenCalledTimes(2);
+      expect(crearVisita).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            codigoId: id,
+            usuarioId: segundo.id,
+          }),
+        }),
+      );
+      expect(codigos.update).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

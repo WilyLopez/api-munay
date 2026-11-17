@@ -47,6 +47,7 @@ model Usuario {
   favoritos             Favorito[]
   sesiones              SesionUsuario[]
   visitas               VisitaVerificada[]
+  permisosVisita        PermisoVisita[]
   resenas               Resena[]
   votosResenas          VotoResena[]
   movimientosPuntos     MovimientoPuntos[]
@@ -183,10 +184,24 @@ model CodigoVisita {
   anuladoEn DateTime?         @map("anulado_en") @db.Timestamptz(3)
   usadoEn   DateTime?         @map("usado_en") @db.Timestamptz(3)
   destino   Destino           @relation(fields: [destinoId], references: [id], onDelete: Cascade)
-  visita    VisitaVerificada?
+  visitas   VisitaVerificada[]
+  permisos  PermisoVisita[]
 
   @@index([destinoId, creadoEn])
   @@map("codigos_visita")
+  @@schema("munay")
+}
+
+model PermisoVisita {
+  codigoId  String       @map("codigo_id") @db.Uuid
+  usuarioId String       @map("usuario_id") @db.Uuid
+  venceEn   DateTime     @map("vence_en") @db.Timestamptz(3)
+  codigo    CodigoVisita @relation(fields: [codigoId], references: [id], onDelete: Cascade)
+  usuario   Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([codigoId, usuarioId])
+  @@index([usuarioId, venceEn])
+  @@map("permisos_visita")
   @@schema("munay")
 }
 
@@ -194,7 +209,7 @@ model VisitaVerificada {
   id           String       @id @default(uuid()) @db.Uuid
   usuarioId    String       @map("usuario_id") @db.Uuid
   destinoId    String       @map("destino_id") @db.Uuid
-  codigoId     String       @unique @map("codigo_id") @db.Uuid
+  codigoId     String       @map("codigo_id") @db.Uuid
   verificadaEn DateTime     @default(now()) @map("verificada_en") @db.Timestamptz(3)
   usuario      Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   destino      Destino      @relation(fields: [destinoId], references: [id], onDelete: Cascade)
@@ -202,6 +217,7 @@ model VisitaVerificada {
   resena       Resena?
 
   @@unique([usuarioId, destinoId])
+  @@index([codigoId])
   @@index([destinoId, verificadaEn, id])
   @@map("visitas_verificadas")
   @@schema("munay")
