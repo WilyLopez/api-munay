@@ -477,16 +477,18 @@ export class AccesosService {
       const fila = await tx.accesoEncargado.findUnique({
         where: { tokenHash: hashToken(token) },
       });
-      if (
-        !fila ||
-        !fila.venceEn ||
-        fila.venceEn <= new Date() ||
-        fila.estado !== 'pendiente'
-      ) {
+      if (fila?.estado === 'aprobada')
         throw new GoneException(
-          'La invitación venció o ya se utilizó. Pide al equipo de Munay un enlace nuevo.',
+          'Esta invitación ya fue utilizada. Inicia sesión para entrar a tu panel.',
         );
-      }
+      if (fila?.estado === 'revocada')
+        throw new GoneException('Esta invitación fue revocada.');
+      if (!fila || !fila.venceEn || fila.estado !== 'pendiente')
+        throw new GoneException('Esta invitación ya no está disponible.');
+      if (fila.venceEn <= new Date())
+        throw new GoneException(
+          'El enlace de invitación ha vencido. Pide al equipo de Munay un enlace nuevo.',
+        );
       if (fila.correo !== persona.correo)
         throw new ForbiddenException(
           'Inicia sesión con el correo al que se envió esta invitación.',
