@@ -46,9 +46,14 @@ export function validarGeocerca(destino: Coordenadas, ubicacion: unknown) {
       Math.sin(diferenciaLongitud / 2) ** 2;
   const distancia = 2 * 6371000 * Math.asin(Math.sqrt(Math.min(1, valor)));
   if (distancia > RADIO_VISITA_METROS) {
-    throw new UnprocessableEntityException(
-      `Estás aproximadamente a ${Math.ceil(distancia)} m del atractivo. Acércate al radio de ${RADIO_VISITA_METROS} m y vuelve a intentarlo.`,
-    );
+    throw new UnprocessableEntityException({
+      message: `Estás aproximadamente a ${Math.ceil(distancia)} m del atractivo. Acércate al radio de ${RADIO_VISITA_METROS} m y vuelve a intentarlo.`,
+      codigo: 'FUERA_DEL_RADIO',
+      geocerca: {
+        distanciaMetros: Math.ceil(distancia),
+        radioMetros: RADIO_VISITA_METROS,
+      },
+    });
   }
   return {
     distanciaMetros: Math.round(distancia),

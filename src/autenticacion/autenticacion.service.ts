@@ -84,12 +84,21 @@ export class AutenticacionService {
     };
   }
 
-  async actualizarPerfilAdmin(
+  actualizarPerfilVisitante(autorizacion: string | undefined, entrada: unknown) {
+    return this.actualizarNombrePerfil(autorizacion, entrada, 'TURISTA');
+  }
+
+  actualizarPerfilAdmin(autorizacion: string | undefined, entrada: unknown) {
+    return this.actualizarNombrePerfil(autorizacion, entrada, 'ADMIN_DESTINO');
+  }
+
+  private async actualizarNombrePerfil(
     autorizacion: string | undefined,
     entrada: unknown,
+    rol: 'TURISTA' | 'ADMIN_DESTINO',
   ) {
     const { perfil } = await this.validarSesion(autorizacion);
-    if (perfil.rol !== 'ADMIN_DESTINO') throw new ForbiddenException();
+    if (perfil.rol !== rol) throw new ForbiddenException();
     const nombreCompleto = typeof entrada === 'string' ? entrada.trim() : '';
     if (nombreCompleto.length < 2 || nombreCompleto.length > 120) {
       throw new BadRequestException(
@@ -102,7 +111,7 @@ export class AutenticacionService {
         where: {
           id: perfil.id,
           activo: true,
-          rol: 'ADMIN_DESTINO',
+          rol,
           nombreCompleto: perfil.nombreCompleto,
         },
         data: { nombreCompleto },

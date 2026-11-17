@@ -43,6 +43,15 @@ export class AutenticacionController {
     await this.autenticacion.actualizarPerfilAdmin(autorizacion, nombre);
   }
 
+  @Patch('perfil-visitante')
+  @HttpCode(204)
+  async actualizarPerfilVisitante(
+    @Body('nombreCompleto') nombre: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    await this.autenticacion.actualizarPerfilVisitante(autorizacion, nombre);
+  }
+
   @Delete()
   @HttpCode(204)
   cerrar(@Headers('authorization') autorizacion?: string) {

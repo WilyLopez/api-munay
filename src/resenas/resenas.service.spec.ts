@@ -26,6 +26,7 @@ function prepararServicio() {
     },
   };
   const cliente = {
+    visitaVerificada: tx.visitaVerificada,
     $queryRaw: vi.fn().mockResolvedValue([{ destinoId: 'destino' }]),
     destino: { findUnique: vi.fn().mockResolvedValue({ id: 'destino' }) },
     $transaction: <T>(accion: (transaccion: unknown) => Promise<T>) =>
@@ -210,5 +211,62 @@ describe('Publicación de foto y bono de selfie', () => {
       ),
     ).rejects.toThrow('La foto no corresponde');
     expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('Formulario directo después de verificar el QR', () => {
+  it('usa la fecha de la visita autenticada y permite escribir si no hay reseña', async () => {
+    const { servicio, cliente, tx } = prepararServicio();
+    const fecha = new Date('2026-11-17T15:00:00Z');
+    tx.visitaVerificada.findUnique.mockResolvedValue({
+      id: 'visita',
+      resena: null,
+      verificadaEn: fecha,
+    });
+    const resultado = await servicio.prepararPublicacion('tucume', perfil);
+    expect(resultado).toMatchObject({
+      estado: 'habilitada',
+      fechaVisita: fecha,
+      puntosResena: 10,
+      puntosSelfie: 5,
+    });
+    expect(cliente.visitaVerificada.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          usuarioId_destinoId: { usuarioId: perfil.id, destinoId: 'destino' },
+        },
+      }),
+    );
+  });
+
+  it('bloquea el formulario cuando no se ha verificado la visita', async () => {
+    const { servicio, tx } = prepararServicio();
+    tx.visitaVerificada.findUnique.mockResolvedValue(null);
+    await expect(
+      servicio.prepararPublicacion('tucume', perfil),
+    ).resolves.toMatchObject({ estado: 'bloqueada', fechaVisita: null });
+  });
+
+  it('reconoce una reseña existente al volver a escanear', async () => {
+    const { servicio, tx } = prepararServicio();
+    tx.visitaVerificada.findUnique.mockResolvedValue({
+      id: 'visita',
+      verificadaEn: new Date(),
+      resena: { id, retiradaEn: null },
+    });
+    await expect(
+      servicio.prepararPublicacion('tucume', perfil),
+    ).resolves.toMatchObject({ estado: 'publicada', resenaId: id });
+  });
+
+  it('reserva el formulario de publicación para visitantes', async () => {
+    const { servicio, cliente } = prepararServicio();
+    await expect(
+      servicio.prepararPublicacion('tucume', {
+        id: 'encargado',
+        rol: 'ADMIN_DESTINO',
+      }),
+    ).rejects.toThrow('cuenta de visitante');
+    expect(cliente.visitaVerificada.findUnique).not.toHaveBeenCalled();
   });
 });

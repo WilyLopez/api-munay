@@ -42,6 +42,10 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
         posicion: number | null;
         visitas: number;
         resenas: number;
+        favoritos: number;
+        fotos: number;
+        respuestas: number;
+        puntosPendientes: number;
         ranking: {
           nombre: string;
           saldo: number;
@@ -70,25 +74,99 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
         (SELECT posicion FROM posiciones WHERE propia) AS posicion,
         (SELECT count(*)::int FROM munay.visitas_verificadas WHERE usuario_id = ${usuarioId}::uuid) AS visitas,
         (SELECT count(*)::int FROM munay.resenas WHERE usuario_id = ${usuarioId}::uuid AND retirada_en IS NULL) AS resenas,
+        (SELECT count(*)::int FROM munay.favoritos f JOIN munay.destinos d ON d.id = f.destino_id WHERE f.usuario_id = ${usuarioId}::uuid AND d.estado_editorial = 'publicada') AS favoritos,
+        (SELECT count(*)::int FROM munay.resenas WHERE usuario_id = ${usuarioId}::uuid AND retirada_en IS NULL AND foto_url IS NOT NULL) AS fotos,
+        (SELECT count(*)::int FROM munay.respuestas_resenas WHERE usuario_id = ${usuarioId}::uuid AND retirada_en IS NULL) AS respuestas,
+        (SELECT coalesce(sum(10 + CASE WHEN r.foto_url IS NOT NULL AND r.selfie_declarada THEN 5 ELSE 0 END), 0)::int
+          FROM munay.resenas r WHERE r.usuario_id = ${usuarioId}::uuid AND r.retirada_en IS NULL
+          AND r.visita_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM munay.movimientos_puntos m WHERE m.resena_id = r.id AND m.tipo = 'acreditacion'
+          )) AS "puntosPendientes",
         coalesce((SELECT jsonb_agg(to_jsonb(p) - 'id' ORDER BY posicion, id) FROM primeros p), '[]'::jsonb) AS ranking`;
     return resumen;
   }
 
   async historial(
     usuarioId: string,
-    seccion: 'visitas' | 'resenas',
+    seccion:
+      'visitas' | 'resenas' | 'fotos' | 'respuestas' | 'favoritos' | 'puntos',
     pagina: number,
   ) {
     const limite = 12;
     const paginacion = { skip: (pagina - 1) * limite, take: limite + 1 };
-    const destino = { select: { slug: true, nombre: true, ubicacion: true } };
+    const destino = {
+      select: {
+        slug: true,
+        nombre: true,
+        ubicacion: true,
+        imagenUrl: true,
+        estadoEditorial: true,
+      },
+    };
     const where = { usuarioId };
     if (seccion === 'visitas') {
       const filas = await this.prisma.cliente.visitaVerificada.findMany({
         where,
         ...paginacion,
         orderBy: [{ verificadaEn: 'desc' }, { id: 'desc' }],
-        select: { id: true, verificadaEn: true, destino },
+        select: {
+          id: true,
+          verificadaEn: true,
+          destino,
+          resena: { select: { id: true, retiradaEn: true } },
+        },
+      });
+      return {
+        seccion,
+        filas: filas.slice(0, limite),
+        hayMas: filas.length > limite && pagina < 9999,
+      };
+    }
+    if (seccion === 'favoritos') {
+      const filas = await this.prisma.cliente.favorito.findMany({
+        where: { usuarioId, destino: { estadoEditorial: 'publicada' } },
+        ...paginacion,
+        orderBy: [{ creadoEn: 'desc' }, { destinoId: 'desc' }],
+        select: { destinoId: true, creadoEn: true, destino },
+      });
+      return {
+        seccion,
+        filas: filas
+          .slice(0, limite)
+          .map(({ destinoId, ...fila }) => ({ id: destinoId, ...fila })),
+        hayMas: filas.length > limite && pagina < 9999,
+      };
+    }
+    if (seccion === 'respuestas') {
+      const filas = await this.prisma.cliente.respuestaResena.findMany({
+        where: { usuarioId, retiradaEn: null },
+        ...paginacion,
+        orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
+        select: {
+          id: true,
+          creadaEn: true,
+          comentario: true,
+          resena: { select: { id: true, retiradaEn: true, destino } },
+        },
+      });
+      return {
+        seccion,
+        filas: filas.slice(0, limite),
+        hayMas: filas.length > limite && pagina < 9999,
+      };
+    }
+    if (seccion === 'puntos') {
+      const filas = await this.prisma.cliente.movimientoPuntos.findMany({
+        where: { usuarioId },
+        ...paginacion,
+        orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
+        select: {
+          id: true,
+          creadoEn: true,
+          tipo: true,
+          puntos: true,
+          resena: { select: { id: true, selfieDeclarada: true, destino } },
+        },
       });
       return {
         seccion,
@@ -97,7 +175,13 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       };
     }
     const filas = await this.prisma.cliente.resena.findMany({
-      where,
+      where: {
+        ...where,
+        ...(seccion === 'fotos' && {
+          fotoUrl: { not: null },
+          retiradaEn: null,
+        }),
+      },
       ...paginacion,
       orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
       select: {
@@ -106,6 +190,11 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
         calificacion: true,
         comentario: true,
         retiradaEn: true,
+        fotoUrl: true,
+        selfieDeclarada: true,
+        visita: { select: { verificadaEn: true } },
+        movimientosPuntos: { select: { tipo: true, puntos: true } },
+        _count: { select: { respuestas: { where: { retiradaEn: null } } } },
         destino,
       },
     });
