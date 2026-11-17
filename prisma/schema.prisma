@@ -48,6 +48,7 @@ model Usuario {
   sesiones              SesionUsuario[]
   visitas               VisitaVerificada[]
   permisosVisita        PermisoVisita[]
+  respuestasResenas     RespuestaResena[]
   resenas               Resena[]
   votosResenas          VotoResena[]
   movimientosPuntos     MovimientoPuntos[]
@@ -234,6 +235,9 @@ model Resena {
   retiradaEn        DateTime?          @map("retirada_en") @db.Timestamptz(3)
   sentimiento       SentimientoResena?
   temas             String[]           @default([])
+  fotoUrl           String?            @map("foto_url")
+  selfieDeclarada   Boolean            @default(false) @map("selfie_declarada")
+  respuestas        RespuestaResena[]
   puntosPendientes  Boolean            @default(false) @map("puntos_pendientes")
   riesgo            Int?
   usuario           Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -324,5 +328,21 @@ model VotoResena {
   @@id([usuarioId, resenaId])
   @@index([resenaId])
   @@map("votos_resenas")
+  @@schema("munay")
+}
+
+model RespuestaResena {
+  id         String   @id @default(uuid()) @db.Uuid
+  resenaId   String   @map("resena_id") @db.Uuid
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  comentario String
+  creadaEn   DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+  retiradaEn DateTime? @map("retirada_en") @db.Timestamptz(3)
+  resena     Resena   @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([resenaId, creadaEn, id])
+  @@index([usuarioId, creadaEn])
+  @@map("respuestas_resenas")
   @@schema("munay")
 }

@@ -26,6 +26,8 @@ function prepararServicio() {
     },
   };
   const cliente = {
+    $queryRaw: vi.fn().mockResolvedValue([{ destinoId: 'destino' }]),
+    destino: { findUnique: vi.fn().mockResolvedValue({ id: 'destino' }) },
     $transaction: <T>(accion: (transaccion: unknown) => Promise<T>) =>
       accion(tx),
     resena: { findUnique: vi.fn().mockResolvedValue(null) },
@@ -89,6 +91,124 @@ describe('Publicación de una reseña verificada', () => {
     await expect(
       servicio.publicar('tucume', perfil, 4, comentario, id),
     ).rejects.toThrow('Ya publicaste');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('Fotos de una reseña', () => {
+  it('requiere autorización para publicar una foto', async () => {
+    const { servicio, tx } = prepararServicio();
+    await expect(
+      servicio.publicar(
+        'tucume',
+        perfil,
+        5,
+        comentario,
+        id,
+        'foto.jpg',
+        false,
+        false,
+      ),
+    ).rejects.toThrow('Autoriza la publicación');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+
+  it('exige una foto para solicitar el bono de selfie', async () => {
+    const { servicio, tx } = prepararServicio();
+    await expect(
+      servicio.publicar('tucume', perfil, 5, comentario, id, undefined, true),
+    ).rejects.toThrow('Adjunta tu selfie');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una imagen de otra cuenta antes de consultar storage', async () => {
+    const { servicio, tx } = prepararServicio();
+    await expect(
+      servicio.publicar(
+        'tucume',
+        perfil,
+        5,
+        comentario,
+        id,
+        'otra-cuenta/foto.jpg',
+        true,
+        true,
+      ),
+    ).rejects.toThrow('La foto no pertenece');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('Publicación de foto y bono de selfie', () => {
+  it('guarda la foto propia y la declaración para acreditar el bono una sola vez', async () => {
+    const { servicio, tx, cliente } = prepararServicio();
+    const archivo = perfil.id + '/' + id + '/' + id + '.jpg';
+    const urlAnterior = process.env.SUPABASE_URL;
+    process.env.SUPABASE_URL = 'https://prueba.supabase.co';
+    try {
+      await servicio.publicar(
+        'tucume',
+        perfil,
+        5,
+        comentario,
+        id,
+        archivo,
+        true,
+        true,
+      );
+      expect(cliente.$queryRaw).toHaveBeenCalledOnce();
+      expect(tx.resena.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            fotoUrl:
+              'https://prueba.supabase.co/storage/v1/object/public/resenas/' +
+              archivo,
+            selfieDeclarada: true,
+            visitaId: 'visita',
+          }),
+        }),
+      );
+    } finally {
+      if (urlAnterior === undefined) delete process.env.SUPABASE_URL;
+      else process.env.SUPABASE_URL = urlAnterior;
+    }
+  });
+
+  it('rechaza una foto que no existe en el storage autorizado', async () => {
+    const { servicio, tx, cliente } = prepararServicio();
+    cliente.$queryRaw.mockResolvedValue([]);
+    const archivo = perfil.id + '/' + id + '/' + id + '.jpg';
+    await expect(
+      servicio.publicar(
+        'tucume',
+        perfil,
+        5,
+        comentario,
+        id,
+        archivo,
+        true,
+        true,
+      ),
+    ).rejects.toThrow('Sube una foto');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+
+  it('rechaza fotos asociadas a un destino diferente', async () => {
+    const { servicio, tx, cliente } = prepararServicio();
+    cliente.$queryRaw.mockResolvedValue([{ destinoId: 'ajeno' }]);
+    const archivo = perfil.id + '/' + id + '/' + id + '.jpg';
+    await expect(
+      servicio.publicar(
+        'tucume',
+        perfil,
+        5,
+        comentario,
+        id,
+        archivo,
+        true,
+        true,
+      ),
+    ).rejects.toThrow('La foto no corresponde');
     expect(tx.resena.create).not.toHaveBeenCalled();
   });
 });

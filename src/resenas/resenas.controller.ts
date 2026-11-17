@@ -13,6 +13,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { RespuestasService } from './respuestas.service.js';
 import type { Response } from 'express';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { ResenasService } from './resenas.service.js';
@@ -22,6 +23,7 @@ export class ResenasController {
   constructor(
     private readonly autenticacion: AutenticacionService,
     private readonly resenas: ResenasService,
+    private readonly respuestas: RespuestasService,
   ) {}
 
   @Get('sentimiento/:slug')
@@ -78,6 +80,9 @@ export class ResenasController {
     @Body('calificacion') calificacion: unknown,
     @Body('comentario') comentario: unknown,
     @Body('solicitudId') solicitudId: unknown,
+    @Body('fotoArchivo') foto: unknown,
+    @Body('selfieDeclarada') selfie: unknown,
+    @Body('consentimientoFoto') consentimientoFoto: unknown,
     @Headers('authorization') autorizacion?: string,
   ) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
@@ -87,7 +92,48 @@ export class ResenasController {
       calificacion,
       comentario,
       solicitudId,
+      foto,
+      selfie,
+      consentimientoFoto,
     );
+  }
+
+  @Get(':id/respuestas')
+  @Header('Cache-Control', 'private, no-store')
+  async listarRespuestas(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('pagina') pagina?: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const sesion = autorizacion
+      ? await this.autenticacion.validarSesion(autorizacion)
+      : null;
+    return this.respuestas.listar(
+      id,
+      pagina && /^[1-9]\d{0,3}$/.test(pagina) ? Number(pagina) : 1,
+      sesion?.perfil,
+    );
+  }
+
+  @Post(':id/respuestas')
+  async responder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('comentario') comentario: unknown,
+    @Body('solicitudId') solicitudId: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.respuestas.publicar(id, perfil, comentario, solicitudId);
+  }
+
+  @Delete('respuestas/:id')
+  @HttpCode(204)
+  async retirarRespuesta(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    await this.respuestas.retirar(id, perfil);
   }
 
   @Put(':id/util')
