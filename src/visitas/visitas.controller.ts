@@ -19,6 +19,12 @@ export class VisitasController {
     private readonly visitas: VisitasService,
   ) {}
 
+  @Get('pantalla/:slug')
+  @Header('Cache-Control', 'no-store')
+  pantallaPublica(@Param('slug') slug: string) {
+    return this.visitas.consultarPantallaPublica(slug);
+  }
+
   @Get('administracion')
   @Header('Cache-Control', 'private, no-store')
   async listar(@Headers('authorization') autorizacion?: string) {
