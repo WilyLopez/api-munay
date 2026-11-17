@@ -87,40 +87,7 @@ export class VisitasService {
       throw new BadRequestException(
         'Publica el destino antes de generar el QR de visitas.',
       );
-    const codigo = await this.prisma.cliente.$transaction(
-      async (transaccion) => {
-        await bloquearDestino(transaccion, destino.id);
-        const ahora = new Date();
-        const actual = await transaccion.codigoVisita.findFirst({
-          where: {
-            destinoId: destino.id,
-            usadoEn: null,
-            anuladoEn: null,
-            venceEn: { gt: ahora },
-          },
-          orderBy: { creadoEn: 'desc' },
-        });
-
-        if (
-          actual &&
-          (!renovar || (codigoId !== undefined && actual.id !== codigoId))
-        )
-          return actual;
-        if (actual) {
-          await transaccion.codigoVisita.update({
-            where: { id: actual.id },
-            data: { anuladoEn: ahora },
-          });
-        }
-        return transaccion.codigoVisita.create({
-          data: {
-            destinoId: destino.id,
-            creadoEn: ahora,
-            venceEn: new Date(ahora.getTime() + VIGENCIA_MS),
-          },
-        });
-      },
-    );
+    const codigo = await this.obtenerCodigoPantalla(destino.id, renovar, codigoId);
 
     const fechaLima = new Intl.DateTimeFormat('sv-SE', {
       timeZone: 'America/Lima',
@@ -151,6 +118,63 @@ export class VisitasService {
       horaServidor: new Date(),
       recientes,
       totalHoy,
+    };
+  }
+
+  private obtenerCodigoPantalla(destinoId: string, renovar: boolean, codigoId?: string) {
+    return this.prisma.cliente.$transaction(
+      async (transaccion) => {
+        await bloquearDestino(transaccion, destinoId);
+        const ahora = new Date();
+        const actual = await transaccion.codigoVisita.findFirst({
+          where: {
+            destinoId: destinoId,
+            usadoEn: null,
+            anuladoEn: null,
+            venceEn: { gt: ahora },
+          },
+          orderBy: { creadoEn: 'desc' },
+        });
+
+        if (
+          actual &&
+          (!renovar || (codigoId !== undefined && actual.id !== codigoId))
+        )
+          return actual;
+        if (actual) {
+          await transaccion.codigoVisita.update({
+            where: { id: actual.id },
+            data: { anuladoEn: ahora },
+          });
+        }
+        return transaccion.codigoVisita.create({
+          data: {
+            destinoId: destinoId,
+            creadoEn: ahora,
+            venceEn: new Date(ahora.getTime() + VIGENCIA_MS),
+          },
+        });
+      },
+    );
+
+  }
+
+  async consultarPantallaPublica(slug: string) {
+    const destino = await this.prisma.cliente.destino.findFirst({
+      where: { slug, estadoEditorial: 'publicada' },
+      select: camposDestino,
+    });
+    if (!destino) throw new NotFoundException('El atractivo no está disponible.');
+    const codigo = await this.obtenerCodigoPantalla(destino.id, false);
+    return {
+      destino,
+      codigo: {
+        id: codigo.id,
+        valor: PREFIJO + codigo.id,
+        creadoEn: codigo.creadoEn,
+        venceEn: codigo.venceEn,
+      },
+      horaServidor: new Date(),
     };
   }
 

@@ -28,7 +28,7 @@ function prepararServicio() {
       accion({ $queryRaw: vi.fn(), codigoVisita: codigos }),
   };
   const servicio = new VisitasService({ cliente } as unknown as ServicioPrisma);
-  return { servicio, codigos, vigente, nuevo };
+  return { servicio, cliente, codigos, vigente, nuevo };
 }
 
 describe('Renovación del QR del destino', () => {
@@ -259,5 +259,30 @@ describe('Permisos individuales de visita', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('Pantalla pública del QR', () => {
+  it('comparte el QR vigente sin exponer el historial de visitas', async () => {
+    const { servicio, cliente, codigos, vigente } = prepararServicio();
+    const resultado = await servicio.consultarPantallaPublica(destino.slug);
+    expect(cliente.destino.findFirst).toHaveBeenCalledWith({
+      where: { slug: destino.slug, estadoEditorial: 'publicada' },
+      select: { id: true, nombre: true, slug: true },
+    });
+    expect(resultado.codigo.id).toBe(vigente.id);
+    expect(resultado).not.toHaveProperty('recientes');
+    expect(resultado).not.toHaveProperty('totalHoy');
+    expect(codigos.update).not.toHaveBeenCalled();
+    expect(cliente.visitaVerificada.findMany).not.toHaveBeenCalled();
+  });
+
+  it('rechaza atractivos que no están publicados', async () => {
+    const { servicio, cliente, codigos } = prepararServicio();
+    cliente.destino.findFirst.mockResolvedValueOnce(null);
+    await expect(servicio.consultarPantallaPublica(destino.slug)).rejects.toThrow(
+      'El atractivo no está disponible.',
+    );
+    expect(codigos.create).not.toHaveBeenCalled();
   });
 });
