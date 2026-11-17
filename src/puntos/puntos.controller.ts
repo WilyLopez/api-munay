@@ -20,10 +20,11 @@ export class PuntosController {
   @Get('mi-resumen')
   @Header('Cache-Control', 'private, no-store')
   async miResumen(@Headers('authorization') autorizacion?: string) {
-    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    const perfil = await this.autenticacion.identificarSesion(autorizacion);
     if (perfil.rol !== 'TURISTA') throw new ForbiddenException();
     return {
       nombre: perfil.nombreCompleto,
+      correo: perfil.correo,
       rol: perfil.rol,
       ...(await this.puntos.resumen(perfil.id)),
     };
@@ -41,10 +42,21 @@ export class PuntosController {
     if (
       typeof pagina !== 'string' ||
       !/^[1-9]\d{0,3}$/.test(pagina) ||
-      (seccion !== 'visitas' && seccion !== 'resenas')
+      ![
+        'visitas',
+        'resenas',
+        'fotos',
+        'respuestas',
+        'favoritos',
+        'puntos',
+      ].includes(seccion)
     ) {
       throw new BadRequestException('La sección o la página no es válida.');
     }
-    return this.puntos.historial(perfil.id, seccion, Number(pagina));
+    return this.puntos.historial(
+      perfil.id,
+      seccion as Parameters<PuntosService['historial']>[1],
+      Number(pagina),
+    );
   }
 }

@@ -97,6 +97,8 @@ export class ReportesService {
               select: {
                 id: true,
                 comentario: true,
+                fotoUrl: true,
+                creadaEn: true,
                 calificacion: true,
                 visitaId: true,
                 destino: { select: { nombre: true, slug: true } },

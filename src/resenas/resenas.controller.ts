@@ -62,6 +62,16 @@ export class ResenasController {
     );
   }
 
+  @Get('escribir/:slug')
+  @Header('Cache-Control', 'private, no-store')
+  async prepararPublicacion(
+    @Param('slug') slug: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.resenas.prepararPublicacion(slug, perfil);
+  }
+
   @Get(':id')
   @Header('Cache-Control', 'private, no-store')
   async obtener(

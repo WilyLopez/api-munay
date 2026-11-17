@@ -28,7 +28,7 @@ function seleccionarResena(usuarioId?: string) {
     visita: { select: { verificadaEn: true } },
     fotoUrl: true,
     usuario: { select: { nombreCompleto: true } },
-    destino: { select: { nombre: true, slug: true } },
+    destino: { select: { nombre: true, slug: true, imagenUrl: true } },
     anclaje: { select: { huella: true, estado: true, transaccion: true } },
     _count: {
       select: { votos: true, respuestas: { where: { retiradaEn: null } } },
@@ -259,6 +259,42 @@ export class ResenasService {
     if (!resena)
       throw new NotFoundException('Esta reseña ya no está disponible.');
     return serializarResena(resena);
+  }
+
+  async prepararPublicacion(slug: string, perfil: PerfilResenas) {
+    if (perfil.rol !== 'TURISTA')
+      throw new ForbiddenException(
+        'Escribe tu reseña con una cuenta de visitante.',
+      );
+    const destino = await this.prisma.cliente.destino.findUnique({
+      where: { slug, estadoEditorial: 'publicada' },
+      select: { id: true, slug: true, nombre: true, imagenUrl: true },
+    });
+    if (!destino)
+      throw new NotFoundException('El atractivo ya no está disponible.');
+    const visita = await this.prisma.cliente.visitaVerificada.findUnique({
+      where: {
+        usuarioId_destinoId: { usuarioId: perfil.id, destinoId: destino.id },
+      },
+      select: {
+        verificadaEn: true,
+        resena: { select: { id: true, retiradaEn: true } },
+      },
+    });
+    return {
+      destino,
+      fechaVisita: visita?.verificadaEn ?? null,
+      estado: !visita
+        ? 'bloqueada'
+        : !visita.resena
+          ? 'habilitada'
+          : visita.resena.retiradaEn
+            ? 'retirada'
+            : 'publicada',
+      resenaId: visita?.resena?.id ?? null,
+      puntosResena: 10,
+      puntosSelfie: 5,
+    };
   }
 
   async publicar(
