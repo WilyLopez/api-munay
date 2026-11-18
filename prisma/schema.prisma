@@ -48,6 +48,7 @@ model Usuario {
   sesiones              SesionUsuario[]
   visitas               VisitaVerificada[]
   permisosVisita        PermisoVisita[]
+  visitasInvitadas      VisitaInvitada[]
   respuestasResenas     RespuestaResena[]
   resenas               Resena[]
   votosResenas          VotoResena[]
@@ -187,6 +188,7 @@ model CodigoVisita {
   destino   Destino           @relation(fields: [destinoId], references: [id], onDelete: Cascade)
   visitas   VisitaVerificada[]
   permisos  PermisoVisita[]
+  invitadas VisitaInvitada[]
 
   @@index([destinoId, creadoEn])
   @@map("codigos_visita")
@@ -344,5 +346,20 @@ model RespuestaResena {
   @@index([resenaId, creadaEn, id])
   @@index([usuarioId, creadaEn])
   @@map("respuestas_resenas")
+  @@schema("munay")
+}
+
+model VisitaInvitada {
+  id            String    @id @default(uuid()) @db.Uuid
+  tokenHash     String    @unique @map("token_hash")
+  codigoId      String    @map("codigo_id") @db.Uuid
+  venceEn       DateTime  @map("vence_en") @db.Timestamptz(3)
+  verificadaEn  DateTime? @map("verificada_en") @db.Timestamptz(3)
+  usuarioId     String?   @map("usuario_id") @db.Uuid
+  codigo        CodigoVisita @relation(fields: [codigoId], references: [id], onDelete: Cascade)
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([venceEn])
+  @@map("visitas_invitadas")
   @@schema("munay")
 }

@@ -23,7 +23,7 @@ const TAMANO_PAGINA = 25;
 const camposDestino = { id: true, nombre: true, slug: true } as const;
 const camposVisita = { id: true, verificadaEn: true } as const;
 
-function comprobarVigencia(
+export function comprobarVigencia(
   codigo: { usadoEn: Date | null; venceEn: Date; anuladoEn: Date | null },
   ahora: Date,
 ) {
@@ -39,7 +39,7 @@ function comprobarVigencia(
     throw new GoneException('El QR expiró. Escanea el código vigente.');
 }
 
-function bloquearDestino(
+export function bloquearDestino(
   transaccion: Prisma.TransactionClient,
   destinoId: string,
 ) {
@@ -87,7 +87,11 @@ export class VisitasService {
       throw new BadRequestException(
         'Publica el destino antes de generar el QR de visitas.',
       );
-    const codigo = await this.obtenerCodigoPantalla(destino.id, renovar, codigoId);
+    const codigo = await this.obtenerCodigoPantalla(
+      destino.id,
+      renovar,
+      codigoId,
+    );
 
     const fechaLima = new Intl.DateTimeFormat('sv-SE', {
       timeZone: 'America/Lima',
@@ -121,42 +125,43 @@ export class VisitasService {
     };
   }
 
-  private obtenerCodigoPantalla(destinoId: string, renovar: boolean, codigoId?: string) {
-    return this.prisma.cliente.$transaction(
-      async (transaccion) => {
-        await bloquearDestino(transaccion, destinoId);
-        const ahora = new Date();
-        const actual = await transaccion.codigoVisita.findFirst({
-          where: {
-            destinoId: destinoId,
-            usadoEn: null,
-            anuladoEn: null,
-            venceEn: { gt: ahora },
-          },
-          orderBy: { creadoEn: 'desc' },
-        });
+  private obtenerCodigoPantalla(
+    destinoId: string,
+    renovar: boolean,
+    codigoId?: string,
+  ) {
+    return this.prisma.cliente.$transaction(async (transaccion) => {
+      await bloquearDestino(transaccion, destinoId);
+      const ahora = new Date();
+      const actual = await transaccion.codigoVisita.findFirst({
+        where: {
+          destinoId: destinoId,
+          usadoEn: null,
+          anuladoEn: null,
+          venceEn: { gt: ahora },
+        },
+        orderBy: { creadoEn: 'desc' },
+      });
 
-        if (
-          actual &&
-          (!renovar || (codigoId !== undefined && actual.id !== codigoId))
-        )
-          return actual;
-        if (actual) {
-          await transaccion.codigoVisita.update({
-            where: { id: actual.id },
-            data: { anuladoEn: ahora },
-          });
-        }
-        return transaccion.codigoVisita.create({
-          data: {
-            destinoId: destinoId,
-            creadoEn: ahora,
-            venceEn: new Date(ahora.getTime() + VIGENCIA_MS),
-          },
+      if (
+        actual &&
+        (!renovar || (codigoId !== undefined && actual.id !== codigoId))
+      )
+        return actual;
+      if (actual) {
+        await transaccion.codigoVisita.update({
+          where: { id: actual.id },
+          data: { anuladoEn: ahora },
         });
-      },
-    );
-
+      }
+      return transaccion.codigoVisita.create({
+        data: {
+          destinoId: destinoId,
+          creadoEn: ahora,
+          venceEn: new Date(ahora.getTime() + VIGENCIA_MS),
+        },
+      });
+    });
   }
 
   async consultarPantallaPublica(slug: string) {
@@ -164,7 +169,8 @@ export class VisitasService {
       where: { slug, estadoEditorial: 'publicada' },
       select: camposDestino,
     });
-    if (!destino) throw new NotFoundException('El atractivo no está disponible.');
+    if (!destino)
+      throw new NotFoundException('El atractivo no está disponible.');
     const codigo = await this.obtenerCodigoPantalla(destino.id, false);
     return {
       destino,
@@ -268,6 +274,10 @@ export class VisitasService {
       throw new ForbiddenException(
         'La verificación está disponible para cuentas de turista.',
       );
+    return this.obtenerCodigoVisita(texto, slug);
+  }
+
+  async obtenerCodigoVisita(texto: unknown, slug?: string) {
     const codigoId =
       typeof texto === 'string' ? FORMATO_CODIGO.exec(texto)?.[1] : undefined;
     if (!codigoId)
