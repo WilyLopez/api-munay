@@ -35,7 +35,9 @@ export class AutenticacionService {
 
   async iniciarSesion(autorizacion?: string) {
     const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
-    const nombre = usuario.user_metadata.nombreCompleto as unknown;
+    const nombre = (usuario.user_metadata.nombreCompleto ??
+      usuario.user_metadata.full_name ??
+      usuario.user_metadata.name) as unknown;
     const nombreCompleto =
       typeof nombre === 'string' && nombre.trim()
         ? nombre.trim().slice(0, 120)
@@ -70,7 +72,10 @@ export class AutenticacionService {
   async identificarSesion(autorizacion?: string) {
     const { usuario, sesionId } = await this.verificarIdentidad(autorizacion);
     const { perfil } = await this.actualizarActividad(usuario.id, sesionId);
-    if (!usuario.email) throw new UnauthorizedException('La cuenta necesita un correo confirmado.');
+    if (!usuario.email)
+      throw new UnauthorizedException(
+        'La cuenta necesita un correo confirmado.',
+      );
     return { ...perfil, correo: usuario.email.trim().toLowerCase() };
   }
 
@@ -84,7 +89,10 @@ export class AutenticacionService {
     };
   }
 
-  actualizarPerfilVisitante(autorizacion: string | undefined, entrada: unknown) {
+  actualizarPerfilVisitante(
+    autorizacion: string | undefined,
+    entrada: unknown,
+  ) {
     return this.actualizarNombrePerfil(autorizacion, entrada, 'TURISTA');
   }
 

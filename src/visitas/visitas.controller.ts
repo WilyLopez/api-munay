@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
+import { VisitasInvitadasService } from './visitas-invitadas.service.js';
 import { VisitasService } from './visitas.service.js';
 
 @Controller('visitas')
@@ -17,6 +18,7 @@ export class VisitasController {
   constructor(
     private readonly autenticacion: AutenticacionService,
     private readonly visitas: VisitasService,
+    private readonly invitadas: VisitasInvitadasService,
   ) {}
 
   @Get('pantalla/:slug')
@@ -78,6 +80,57 @@ export class VisitasController {
       slug,
       meses === '12' ? 12 : meses === '3' ? 3 : 6,
     );
+  }
+
+  @Post('invitadas/preparar')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  prepararInvitada(
+    @Body() datos: { token?: unknown; codigo?: unknown; destino?: string },
+  ) {
+    return this.invitadas.preparar(
+      datos?.token,
+      datos?.codigo,
+      typeof datos?.destino === 'string' ? datos.destino : undefined,
+    );
+  }
+
+  @Post('invitadas/verificar')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  verificarInvitada(
+    @Body()
+    datos: {
+      token?: unknown;
+      codigo?: unknown;
+      destino?: string;
+      ubicacion?: unknown;
+    },
+  ) {
+    return this.invitadas.verificar(
+      datos?.token,
+      datos?.codigo,
+      typeof datos?.destino === 'string' ? datos.destino : undefined,
+      datos?.ubicacion,
+    );
+  }
+
+  @Post('invitadas/estado')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  estadoInvitada(@Body() datos: { token?: unknown; destino?: unknown }) {
+    return this.invitadas.estado(datos?.token, datos?.destino);
+  }
+
+  @Post('invitadas/reclamar')
+  @HttpCode(200)
+  @Header('Cache-Control', 'private, no-store')
+  async reclamarInvitada(
+    @Body('token') token: unknown,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.invitadas.reclamar(token, perfil);
   }
 
   @Post('verificar')
