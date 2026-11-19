@@ -115,6 +115,21 @@ export function validarInformacion(entrada: unknown): Prisma.InputJsonObject {
     const valor = texto(datos[clave] ?? '', limite, etiqueta);
     if (!valor) continue;
     if (tipo === 'url') validarUrl(valor, etiqueta);
+    const redes: Record<string, string[]> = {
+      facebook: ['facebook.com', 'fb.com'],
+      instagram: ['instagram.com'],
+      tiktok: ['tiktok.com'],
+      youtube: ['youtube.com', 'youtu.be'],
+    };
+    if (redes[clave]) {
+      const host = new URL(valor).hostname.toLowerCase();
+      if (
+        !redes[clave].some(
+          (dominio) => host === dominio || host.endsWith(`.${dominio}`),
+        )
+      )
+        throw new BadRequestException(`Usa un enlace oficial de ${etiqueta}.`);
+    }
     if (tipo === 'enlaces')
       for (const enlace of valor.split(/\r?\n/))
         validarUrl(enlace.trim(), etiqueta);
@@ -164,6 +179,14 @@ export function validarInformacion(entrada: unknown): Prisma.InputJsonObject {
     throw new BadRequestException('Revisa el rango de fechas del aviso.');
   if (Boolean(latitudIngreso) !== Boolean(longitudIngreso))
     throw new BadRequestException('Completa ambas coordenadas de la entrada.');
+  if ((avisoDesde || avisoHasta) && !resultado.aviso)
+    throw new BadRequestException(
+      'Escribe el mensaje del aviso antes de indicar sus fechas.',
+    );
+  if (resultado.aviso && (!avisoDesde || !avisoHasta))
+    throw new BadRequestException(
+      'Completa las fechas de inicio y fin del aviso temporal.',
+    );
   const galeria = datos.galeria ?? [];
   if (!Array.isArray(galeria) || galeria.length > 12)
     throw new BadRequestException('La galería admite hasta 12 fotos.');
@@ -184,6 +207,70 @@ export function validarInformacion(entrada: unknown): Prisma.InputJsonObject {
     throw new BadRequestException('Retira las fotos duplicadas de la galería.');
   resultado.galeria = fotos;
   return resultado;
+}
+
+export function validarCoherenciaFicha(
+  informacion: Prisma.InputJsonObject,
+  general: unknown,
+  estudiantes: unknown,
+  publicar = false,
+) {
+  const rechazar = (campo: string, message: string): never => {
+    throw new BadRequestException({ message, campos: { [campo]: message } });
+  };
+  if (
+    informacion.modalidadIngreso === 'libre' &&
+    [general, estudiantes].some((valor) => valor != null && Number(valor) > 0)
+  )
+    rechazar(
+      Number(general) > 0 ? 'tarifaGeneral' : 'tarifaEstudiantes',
+      'La entrada libre no puede tener tarifas mayores a cero.',
+    );
+  if (
+    publicar &&
+    informacion.modalidadIngreso === 'pago' &&
+    !(Number(general) > 0)
+  )
+    rechazar(
+      'tarifaGeneral',
+      'Indica una tarifa general mayor a cero para una entrada de pago.',
+    );
+  if (
+    informacion.modalidadIngreso === 'reserva' &&
+    !informacion.reservaUrl &&
+    !informacion.telefono &&
+    !informacion.whatsapp &&
+    !informacion.correo
+  )
+    rechazar(
+      'reservaUrl',
+      'Indica un enlace o contacto oficial para gestionar las reservas.',
+    );
+  if (
+    typeof informacion.condicion === 'string' &&
+    ['cerrado', 'restringido'].includes(informacion.condicion) &&
+    !informacion.motivoCierre
+  )
+    rechazar(
+      'motivoCierre',
+      'Explica el motivo del cierre o de la restricción.',
+    );
+  if (informacion.reapertura && informacion.condicion === 'abierto')
+    rechazar(
+      'reapertura',
+      'Retira la fecha de reapertura si el atractivo ya está abierto.',
+    );
+  const hoy = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Lima',
+  }).format(new Date());
+  if (
+    typeof informacion.reapertura === 'string' &&
+    informacion.reapertura < hoy
+  )
+    rechazar(
+      'reapertura',
+      'Actualiza la reapertura: la fecha indicada ya pasó.',
+    );
 }
 
 export function validarDatosDestino(entrada: Record<string, unknown>) {
