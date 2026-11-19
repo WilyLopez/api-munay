@@ -8,9 +8,11 @@ import {
   Param,
   Post,
   Query,
+  Sse,
 } from '@nestjs/common';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { VisitasInvitadasService } from './visitas-invitadas.service.js';
+import { EventosVisitasService } from './eventos-visitas.service.js';
 import { VisitasService } from './visitas.service.js';
 
 @Controller('visitas')
@@ -19,6 +21,7 @@ export class VisitasController {
     private readonly autenticacion: AutenticacionService,
     private readonly visitas: VisitasService,
     private readonly invitadas: VisitasInvitadasService,
+    private readonly eventos: EventosVisitasService,
   ) {}
 
   @Get('pantalla/:slug')
@@ -32,6 +35,18 @@ export class VisitasController {
   async listar(@Headers('authorization') autorizacion?: string) {
     const { perfil } = await this.autenticacion.validarSesion(autorizacion);
     return this.visitas.listarDestinos(perfil);
+  }
+
+  @Sse('administracion/:slug/eventos')
+  @Header('Cache-Control', 'private, no-store, no-transform')
+  @Header('X-Accel-Buffering', 'no')
+  async escucharEventos(
+    @Param('slug') slug: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    const destinoId = await this.visitas.autorizarEventos(perfil, slug);
+    return this.eventos.observar(destinoId);
   }
 
   @Post('administracion/:slug/codigo')

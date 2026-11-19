@@ -38,6 +38,7 @@ function preparar() {
       update: vi.fn().mockResolvedValue(invitada),
       upsert: vi.fn().mockResolvedValue(invitada),
     },
+    permisoVisita: { upsert: vi.fn().mockResolvedValue({}) },
     visitaVerificada: { upsert: vi.fn().mockResolvedValue({ id: 'visita' }) },
   };
   const cliente = {
@@ -57,19 +58,74 @@ describe('Visitas de invitados', () => {
     const { servicio, tx } = preparar();
     tx.visitaInvitada.findUnique.mockResolvedValue(null);
     const antes = Date.now();
-    await expect(servicio.preparar(token, 'codigo', 'museo')).resolves.toHaveProperty('estado', 'ubicacion');
+    await expect(
+      servicio.preparar(token, 'codigo', 'museo'),
+    ).resolves.toHaveProperty('estado', 'ubicacion');
     const guardada = tx.visitaInvitada.upsert.mock.calls[0][0];
     expect(guardada.create.tokenHash).not.toBe(token);
     expect(guardada.create.tokenHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(guardada.create.venceEn.getTime()).toBeGreaterThanOrEqual(antes + 300000);
+    expect(guardada.create.venceEn.getTime()).toBeGreaterThanOrEqual(
+      antes + 300000,
+    );
     expect(guardada.create.verificadaEn).toBeNull();
   });
   it('no emite un permiso nuevo para un QR vencido', async () => {
     const { servicio, tx } = preparar();
     tx.visitaInvitada.findUnique.mockResolvedValue(null);
-    tx.codigoVisita.findUnique.mockResolvedValue({ ...codigo, venceEn: new Date(0) });
-    await expect(servicio.preparar(token, 'codigo', 'museo')).rejects.toThrow('expiró');
+    tx.codigoVisita.findUnique.mockResolvedValue({
+      ...codigo,
+      venceEn: new Date(0),
+    });
+    await expect(servicio.preparar(token, 'codigo', 'museo')).rejects.toThrow(
+      'expiró',
+    );
     expect(tx.visitaInvitada.upsert).not.toHaveBeenCalled();
+  });
+  it('transfiere el permiso al identificarse antes de comprobar ubicación sin inventar una visita', async () => {
+    const { servicio, tx, invitada } = preparar();
+    invitada.verificadaEn = null as unknown as Date;
+    invitada.venceEn = new Date(Date.now() + 120000);
+    await expect(
+      servicio.reclamar(token, { id: 'usuario', rol: 'TURISTA' }),
+    ).resolves.toEqual({ visitaId: null, slug: 'museo' });
+    expect(tx.permisoVisita.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: {
+          codigoId: codigo.id,
+          usuarioId: 'usuario',
+          venceEn: invitada.venceEn,
+        },
+        update: { venceEn: invitada.venceEn },
+      }),
+    );
+    expect(tx.visitaVerificada.upsert).not.toHaveBeenCalled();
+    expect(tx.visitaInvitada.update).toHaveBeenCalledWith({
+      where: { id: invitada.id },
+      data: { usuarioId: 'usuario' },
+    });
+  });
+  it('no transfiere un permiso pendiente que ya venció', async () => {
+    const { servicio, tx, invitada } = preparar();
+    invitada.verificadaEn = null as unknown as Date;
+    invitada.venceEn = new Date(0);
+    await expect(
+      servicio.reclamar(token, { id: 'usuario', rol: 'TURISTA' }),
+    ).rejects.toThrow('venció');
+    expect(tx.permisoVisita.upsert).not.toHaveBeenCalled();
+  });
+  it('identifica una visita temporal ya verificada sin crear otra ni cambiar su fecha', async () => {
+    const { servicio, tx, invitada } = preparar();
+    await expect(
+      servicio.preparar(token, 'codigo', 'museo'),
+    ).resolves.toMatchObject({
+      estado: 'verificada',
+      datos: {
+        yaVerificada: true,
+        visita: { id: invitada.id, verificadaEn: invitada.verificadaEn },
+      },
+    });
+    expect(tx.visitaInvitada.upsert).not.toHaveBeenCalled();
+    expect(tx.visitaInvitada.update).not.toHaveBeenCalled();
   });
   it('rechaza tokens inválidos antes de consultar la base', async () => {
     const { servicio, tx } = preparar();

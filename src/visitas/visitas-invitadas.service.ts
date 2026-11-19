@@ -72,7 +72,7 @@ export class VisitasInvitadasService {
             datos: {
               visita: { id: actual.id, verificadaEn: actual.verificadaEn },
               destino: codigo.destino,
-              yaVerificada: false,
+              yaVerificada: true,
             },
           } as const;
         if (actual.codigoId === codigo.id)
@@ -187,7 +187,7 @@ export class VisitasInvitadasService {
         include: incluirCodigo,
       });
       if (
-        !actual?.verificadaEn ||
+        !actual ||
         actual.venceEn <= new Date() ||
         actual.codigo.destino.estadoEditorial !== 'publicada'
       )
@@ -206,6 +206,19 @@ export class VisitasInvitadasService {
         throw new GoneException(
           'Este lugar ya no está disponible para registrar visitas.',
         );
+      if (!actual.verificadaEn) {
+        const clave = { codigoId: actual.codigoId, usuarioId: perfil.id };
+        await tx.permisoVisita.upsert({
+          where: { codigoId_usuarioId: clave },
+          create: { ...clave, venceEn: actual.venceEn },
+          update: { venceEn: actual.venceEn },
+        });
+        await tx.visitaInvitada.update({
+          where: { id: actual.id },
+          data: { usuarioId: perfil.id },
+        });
+        return { visitaId: null, slug: actual.codigo.destino.slug };
+      }
       const visita = await tx.visitaVerificada.upsert({
         where: {
           usuarioId_destinoId: {

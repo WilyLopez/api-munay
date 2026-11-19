@@ -80,6 +80,51 @@ describe('Publicación de una reseña verificada', () => {
     expect(destinos.limpiarCache).toHaveBeenCalled();
   });
 
+  it.each([undefined, null, 0, 6, 1.5, '5', Number.NaN])(
+    'rechaza una calificación inválida sin guardar la reseña: %s',
+    async (nota) => {
+      const { servicio, tx } = prepararServicio();
+      await expect(
+        servicio.publicar('tucume', perfil, nota, comentario, id),
+      ).rejects.toThrow('Selecciona una calificación');
+      expect(tx.resena.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['', '   ', '\n\t'])(
+    'rechaza un comentario vacío sin guardar la reseña: %j',
+    async (texto) => {
+      const { servicio, tx } = prepararServicio();
+      await expect(
+        servicio.publicar('tucume', perfil, 5, texto, id),
+      ).rejects.toThrow('Escribe un comentario');
+      expect(tx.resena.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it('impide publicar sin visita verificada aunque se omita la interfaz', async () => {
+    const { servicio, tx } = prepararServicio();
+    tx.visitaVerificada.findUnique.mockResolvedValue(null);
+    await expect(
+      servicio.publicar('tucume', perfil, 5, comentario, id),
+    ).rejects.toThrow('Verifica tu visita');
+    expect(tx.resena.create).not.toHaveBeenCalled();
+  });
+
+  it('actualiza el promedio con las reseñas visibles al publicar', async () => {
+    const { servicio, tx } = prepararServicio();
+    tx.resena.aggregate.mockResolvedValue({ _avg: { calificacion: 4.5 } });
+    await servicio.publicar('tucume', perfil, 4, comentario, id);
+    expect(tx.resena.aggregate).toHaveBeenCalledWith({
+      where: { destinoId: 'destino', retiradaEn: null },
+      _avg: { calificacion: true },
+    });
+    expect(tx.destino.update).toHaveBeenCalledWith({
+      where: { id: 'destino' },
+      data: { calificacionPromedio: '4.50' },
+    });
+  });
+
   it('reconoce el envío guardado y bloquea un segundo contenido', async () => {
     const { servicio, tx } = prepararServicio();
     tx.visitaVerificada.findUnique.mockResolvedValue({
