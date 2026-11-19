@@ -47,6 +47,14 @@ describe('Renovación del QR del destino', () => {
     expect(resultado.codigo.id).toBe(nuevo.id);
   });
 
+  it('genera el nuevo QR con exactamente sesenta segundos de vigencia', async () => {
+    const { servicio, codigos } = prepararServicio();
+    codigos.findFirst.mockResolvedValue(null);
+    await servicio.sincronizar(encargado, destino.slug, false);
+    const { creadoEn, venceEn } = codigos.create.mock.calls[0][0].data;
+    expect(venceEn.getTime() - creadoEn.getTime()).toBe(60000);
+  });
+
   it('conserva el QR vigente cuando otra pantalla ya hizo la renovación', async () => {
     const { servicio, codigos, vigente } = prepararServicio();
     const resultado = await servicio.sincronizar(
@@ -280,9 +288,9 @@ describe('Pantalla pública del QR', () => {
   it('rechaza atractivos que no están publicados', async () => {
     const { servicio, cliente, codigos } = prepararServicio();
     cliente.destino.findFirst.mockResolvedValueOnce(null);
-    await expect(servicio.consultarPantallaPublica(destino.slug)).rejects.toThrow(
-      'El atractivo no está disponible.',
-    );
+    await expect(
+      servicio.consultarPantallaPublica(destino.slug),
+    ).rejects.toThrow('El atractivo no está disponible.');
     expect(codigos.create).not.toHaveBeenCalled();
   });
 });

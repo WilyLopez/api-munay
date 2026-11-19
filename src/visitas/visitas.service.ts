@@ -72,6 +72,11 @@ export class VisitasService {
     return destino;
   }
 
+  async autorizarEventos(perfil: Perfil, slug: string) {
+    const destino = await this.obtenerDestinoAdministrado(perfil, slug);
+    return destino.id;
+  }
+
   async sincronizar(
     perfil: Perfil,
     slug: string,
@@ -295,6 +300,7 @@ export class VisitasService {
         destino: {
           select: {
             ...camposDestino,
+            imagenUrl: true,
             latitud: true,
             longitud: true,
             informacion: true,

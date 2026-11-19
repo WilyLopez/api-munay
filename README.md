@@ -64,3 +64,10 @@ npm run build
 npm test
 npm run test:e2e
 ```
+
+
+### Actividad de visitas en tiempo real
+
+El panel QR recibe avisos SSE del endpoint administrativo de visitas. La migración `0023_eventos_visitas` agrega notificaciones PostgreSQL para visitas verificadas y códigos QR. El listener requiere `DIRECT_URL` de conexión directa o Session pooler (puerto 5432); el Transaction pooler de 6543 no se utiliza para LISTEN. Reutiliza la validación TLS de Prisma y no requiere nuevas claves.
+
+El flujo se limita al destino autorizado y transporta únicamente avisos de actualización. Cada conexión dura hasta 45 segundos y se vuelve a autenticar al reconectar. Si el listener pierde conexión, el frontend informa la sincronización periódica de respaldo. Las conexiones y temporizadores se cierran al abandonar la pantalla o detener la API.
