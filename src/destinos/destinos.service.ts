@@ -234,11 +234,16 @@ export class DestinosService {
               /^[a-f0-9-]{36}\.(?:jpg|png|webp)$/.test(
                 archivo.slice(prefijo.length),
               )
-            ),
+            ) &&
+            !(
+              URL.canParse(archivo) &&
+              ['https:', 'http:'].includes(new URL(archivo).protocol)
+            ) &&
+            !/^\/(?!\/)[\w./%-]+$/.test(archivo),
         )
       ) {
         throw new BadRequestException(
-          'Sube las nuevas fotos desde el editor del destino.',
+          'Sube las nuevas fotos desde el editor del destino o ingresa un enlace válido.',
         );
       }
     }
