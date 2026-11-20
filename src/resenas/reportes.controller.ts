@@ -12,13 +12,28 @@ import {
 } from '@nestjs/common';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { ReportesService } from './reportes.service.js';
+import { AnalisisRiesgoService } from './analisis-riesgo.service.js';
 
 @Controller('reportes-resenas')
 export class ReportesController {
   constructor(
     private readonly autenticacion: AutenticacionService,
     private readonly reportes: ReportesService,
+    private readonly analisis: AnalisisRiesgoService,
   ) {}
+
+  @Get('analisis')
+  @Header('Cache-Control', 'private, no-store')
+  async cola(@Headers('authorization') autorizacion: string, @Query('pagina') pagina = '1', @Query('estado') estado?: string) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.analisis.listar(perfil, /^[1-9]\d{0,3}$/.test(pagina) ? Number(pagina) : 1, estado);
+  }
+
+  @Put('analisis/:id/reintentar')
+  async reintentar(@Headers('authorization') autorizacion: string, @Param('id', ParseUUIDPipe) id: string) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    return this.analisis.reintentar(perfil, id);
+  }
 
   @Put('resena/:id')
   @HttpCode(204)

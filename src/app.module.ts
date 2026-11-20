@@ -11,6 +11,7 @@ import { AnclajesModule } from './blockchain/anclajes.module.js';
 import { PuntosModule } from './puntos/puntos.module.js';
 import { TareasController } from './tareas.controller.js';
 import { AccesosModule } from './accesos/accesos.module.js';
+import { BeneficiosModule } from './beneficios/beneficios.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AccesosModule } from './accesos/accesos.module.js';
     AnclajesModule,
     PuntosModule,
     AccesosModule,
+    BeneficiosModule,
   ],
   controllers: [AppController, TareasController],
   providers: [AppService],

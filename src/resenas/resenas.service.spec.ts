@@ -72,7 +72,8 @@ describe('Publicación de una reseña verificada', () => {
       id,
       visitaId: 'visita',
       sentimiento: expect.any(String),
-      riesgo: expect.any(Number),
+      puntosPendientes: false,
+      analisisRiesgo: { create: {} },
       anclaje: {
         create: { huella: expect.stringMatching(/^(?:0x)?[a-f0-9]{64}$/) },
       },

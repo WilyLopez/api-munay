@@ -1,6 +1,7 @@
 import {
   Injectable,
   Logger,
+  NotFoundException,
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
@@ -33,6 +34,47 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       _sum: { puntos: true },
     });
     return saldo._sum.puntos ?? 0;
+  }
+
+  async recompensa(usuarioId: string, resenaId: string) {
+    const resena = await this.prisma.cliente.resena.findFirst({
+      where: { id: resenaId, usuarioId },
+      select: {
+        creadaEn: true,
+        retiradaEn: true,
+        fotoUrl: true,
+        selfieDeclarada: true,
+        destino: { select: { nombre: true, slug: true } },
+        movimientosPuntos: {
+          select: { tipo: true, puntos: true, creadoEn: true },
+        },
+      },
+    });
+    if (!resena)
+      throw new NotFoundException(
+        'Esta recompensa no está disponible para tu cuenta.',
+      );
+    const abono = resena.movimientosPuntos.find(
+      (movimiento) => movimiento.tipo === 'acreditacion',
+    );
+    const revertida = Boolean(
+      resena.retiradaEn ||
+      resena.movimientosPuntos.some(
+        (movimiento) => movimiento.tipo === 'reversion',
+      ),
+    );
+    const total = !revertida && abono ? abono.puntos : 0;
+    return {
+      estado: revertida ? 'revertida' : abono ? 'acreditada' : 'pendiente',
+      destino: resena.destino,
+      registradoEn: abono?.creadoEn ?? resena.creadaEn,
+      puntosResena: Math.min(PUNTOS_RESENA, total),
+      puntosSelfie: Math.max(0, total - PUNTOS_RESENA),
+      total,
+      previstos: revertida
+        ? 0
+        : PUNTOS_RESENA + (resena.fotoUrl && resena.selfieDeclarada ? 5 : 0),
+    };
   }
 
   async resumen(usuarioId: string) {
@@ -70,7 +112,7 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
         SELECT id, nombre, saldo, posicion, propia FROM posiciones
         ORDER BY posicion, id LIMIT 10
       )
-      SELECT coalesce((SELECT saldo FROM posiciones WHERE propia), 0)::int AS saldo,
+      SELECT coalesce((SELECT sum(puntos) FROM munay.movimientos_puntos WHERE usuario_id = ${usuarioId}::uuid), 0)::int AS saldo,
         (SELECT posicion FROM posiciones WHERE propia) AS posicion,
         (SELECT count(*)::int FROM munay.visitas_verificadas WHERE usuario_id = ${usuarioId}::uuid) AS visitas,
         (SELECT count(*)::int FROM munay.resenas WHERE usuario_id = ${usuarioId}::uuid AND retirada_en IS NULL) AS resenas,
@@ -166,6 +208,13 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
           tipo: true,
           puntos: true,
           resena: { select: { id: true, selfieDeclarada: true, destino } },
+          canje: {
+            select: {
+              id: true,
+              nombre: true,
+              beneficio: { select: { destino } },
+            },
+          },
         },
       });
       return {
@@ -213,6 +262,7 @@ export class PuntosService implements OnModuleInit, OnModuleDestroy {
       WITH pendientes AS (
         SELECT r.id, r.usuario_id, r.foto_url, r.selfie_declarada FROM munay.resenas r
         WHERE r.puntos_pendientes AND r.visita_id IS NOT NULL AND r.retirada_en IS NULL ${filtro}
+          AND NOT EXISTS (SELECT 1 FROM munay.analisis_riesgo a WHERE a.resena_id = r.id AND a.estado <> 'completado')
         ORDER BY r.creada_en, r.id LIMIT 100 FOR UPDATE OF r SKIP LOCKED
       ), acreditaciones AS (
         INSERT INTO munay.movimientos_puntos (id, usuario_id, resena_id, tipo, puntos)

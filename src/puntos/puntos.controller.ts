@@ -6,6 +6,8 @@ import {
   Header,
   Headers,
   Query,
+  Param,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AutenticacionService } from '../autenticacion/autenticacion.service.js';
 import { PuntosService } from './puntos.service.js';
@@ -16,6 +18,17 @@ export class PuntosController {
     private readonly autenticacion: AutenticacionService,
     private readonly puntos: PuntosService,
   ) {}
+
+  @Get('resenas/:id/recompensa')
+  @Header('Cache-Control', 'private, no-store')
+  async recompensa(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') autorizacion?: string,
+  ) {
+    const { perfil } = await this.autenticacion.validarSesion(autorizacion);
+    if (perfil.rol !== 'TURISTA') throw new ForbiddenException();
+    return this.puntos.recompensa(perfil.id, id);
+  }
 
   @Get('mi-resumen')
   @Header('Cache-Control', 'private, no-store')

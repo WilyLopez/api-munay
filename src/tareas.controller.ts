@@ -9,12 +9,14 @@ import {
 import { timingSafeEqual } from 'node:crypto';
 import { AnclajesService } from './blockchain/anclajes.service.js';
 import { PuntosService } from './puntos/puntos.service.js';
+import { AnalisisRiesgoService } from './resenas/analisis-riesgo.service.js';
 
 @Controller('interno/tareas')
 export class TareasController {
   constructor(
     private readonly puntos: PuntosService,
     private readonly anclajes: AnclajesService,
+    private readonly riesgo: AnalisisRiesgoService,
   ) {}
 
   @Get()
@@ -30,6 +32,7 @@ export class TareasController {
     ) {
       throw new UnauthorizedException();
     }
+    const analisis = await this.riesgo.procesar();
     const [puntos, blockchain] = await Promise.allSettled([
       this.puntos.acreditar(),
       this.anclajes.procesar(),
@@ -43,6 +46,6 @@ export class TareasController {
         'Quedaron tareas pendientes de procesar.',
       );
     }
-    return { puntos: 'procesado', blockchain: blockchain.value };
+    return { puntos: 'procesado', blockchain: blockchain.value, analisis };
   }
 }

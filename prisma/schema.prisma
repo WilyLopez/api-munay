@@ -53,6 +53,8 @@ model Usuario {
   resenas               Resena[]
   votosResenas          VotoResena[]
   movimientosPuntos     MovimientoPuntos[]
+  canjes                CanjeBeneficio[]
+  auditoriasBeneficios  AuditoriaBeneficio[]
 
   @@index([rol, activo])
   @@map("usuarios")
@@ -87,6 +89,7 @@ model SesionUsuario {
 model Destino {
   id                   String                 @id @default(uuid()) @db.Uuid
   slug                 String                 @unique
+  beneficios           Beneficio[]
   ordenPortada         Int?                   @map("orden_portada")
   fotosAdicionales     String[]               @default([]) @map("fotos_adicionales")
   diasAtencion         Int[]                  @default([]) @map("dias_atencion")
@@ -249,11 +252,33 @@ model Resena {
   reportes          ReporteResena[]
   movimientosPuntos MovimientoPuntos[]
   anclaje           AnclajeResena?
+  analisisRiesgo    AnalisisRiesgo?
 
   @@index([destinoId, creadaEn, id])
   @@index([usuarioId, creadaEn])
   @@index([puntosPendientes, creadaEn])
   @@map("resenas")
+  @@schema("munay")
+}
+
+model AnalisisRiesgo {
+  resenaId String @id @map("resena_id") @db.Uuid
+  estado String @default("pendiente")
+  intentos Int @default(0)
+  proximoIntentoEn DateTime @default(now()) @map("proximo_intento_en") @db.Timestamptz(3)
+  bloqueadoHasta DateTime? @map("bloqueado_hasta") @db.Timestamptz(3)
+  token String? @db.Uuid
+  modelo String?
+  puntajeModelo Int? @map("puntaje_modelo")
+  puntajeReglas Int? @map("puntaje_reglas")
+  senales Json @default("[]")
+  error String?
+  creadoEn DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+  resena Resena @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+  @@index([estado, proximoIntentoEn])
+  @@index([bloqueadoHasta])
+  @@map("analisis_riesgo")
   @@schema("munay")
 }
 
@@ -280,16 +305,97 @@ model AnclajeResena {
 model MovimientoPuntos {
   id        String   @id @default(uuid()) @db.Uuid
   usuarioId String   @map("usuario_id") @db.Uuid
-  resenaId  String   @map("resena_id") @db.Uuid
+  resenaId  String?  @map("resena_id") @db.Uuid
+  canjeId   String?  @unique @map("canje_id") @db.Uuid
   tipo      String
   puntos    Int
   creadoEn  DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
   usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  resena    Resena   @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+  resena    Resena?  @relation(fields: [resenaId], references: [id], onDelete: Cascade)
+  canje     CanjeBeneficio? @relation(fields: [canjeId], references: [id], onDelete: Restrict)
 
   @@unique([resenaId, tipo])
   @@index([usuarioId])
   @@map("movimientos_puntos")
+  @@schema("munay")
+}
+
+model Beneficio {
+  id          String @id @default(uuid()) @db.Uuid
+  destinoId   String @map("destino_id") @db.Uuid
+  nombre      String
+  categoria   String
+  local       String
+  condiciones String
+  horario     String
+  costo       Int
+  disponibles Int
+  unUso       Boolean @default(true) @map("un_uso")
+  activo      Boolean @default(false)
+  revision    Int @default(1)
+  estado      String @default("pendiente")
+  tipo        String @default("EXPERIENCIA")
+  valor       Int?
+  iniciaEn    DateTime @default(now()) @map("inicia_en") @db.Timestamptz(3)
+  limitePorPersona Int? @default(1) @map("limite_por_persona")
+  dias        Int[] @default([])
+  horaInicio  String? @map("hora_inicio")
+  horaFin     String? @map("hora_fin")
+  consumoMinimo Int @default(0) @map("consumo_minimo")
+  exclusiones String @default("")
+  reservaPrevia Boolean @default(false) @map("reserva_previa")
+  acumulable  Boolean @default(false)
+  aprobadoEn DateTime? @map("aprobado_en") @db.Timestamptz(3)
+  aprobadoRevision Int? @map("aprobado_revision")
+  venceEn     DateTime @map("vence_en") @db.Timestamptz(3)
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  actualizadoEn DateTime @updatedAt @map("actualizado_en") @db.Timestamptz(3)
+  destino     Destino @relation(fields: [destinoId], references: [id], onDelete: Restrict)
+  canjes      CanjeBeneficio[]
+  auditorias  AuditoriaBeneficio[]
+  @@index([activo, venceEn])
+  @@index([destinoId])
+  @@map("beneficios")
+  @@schema("munay")
+}
+
+model CanjeBeneficio {
+  id          String @id @db.Uuid
+  beneficioId String @map("beneficio_id") @db.Uuid
+  usuarioId   String @map("usuario_id") @db.Uuid
+  codigo      String @unique
+  costo       Int
+  nombre      String
+  local       String
+  condiciones String
+  horario     String
+  detalle     Json @default("{}")
+  creadoEn    DateTime @default(now()) @map("creado_en") @db.Timestamptz(3)
+  venceEn     DateTime @map("vence_en") @db.Timestamptz(3)
+  usadoEn     DateTime? @map("usado_en") @db.Timestamptz(3)
+  usadoPor    String? @map("usado_por") @db.Uuid
+  beneficio   Beneficio @relation(fields: [beneficioId], references: [id], onDelete: Restrict)
+  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  movimiento  MovimientoPuntos?
+  @@index([usuarioId, creadoEn, id])
+  @@index([beneficioId, usuarioId])
+  @@map("canjes_beneficios")
+  @@schema("munay")
+}
+
+model AuditoriaBeneficio {
+  id          String @id @default(uuid()) @db.Uuid
+  beneficioId String @map("beneficio_id") @db.Uuid
+  actorId     String @map("actor_id") @db.Uuid
+  accion      String
+  canjeId     String? @map("canje_id") @db.Uuid
+  cambios     Json
+  creadaEn    DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
+  beneficio   Beneficio @relation(fields: [beneficioId], references: [id], onDelete: Restrict)
+  actor       Usuario @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  @@index([beneficioId, creadaEn, id])
+  @@index([canjeId])
+  @@map("auditorias_beneficios")
   @@schema("munay")
 }
 

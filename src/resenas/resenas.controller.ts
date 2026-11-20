@@ -27,10 +27,7 @@ export class ResenasController {
   ) {}
 
   @Get('sentimiento/:slug')
-  @Header(
-    'Cache-Control',
-    'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
-  )
+  @Header('Cache-Control', 'no-store')
   resumenSentimiento(@Param('slug') slug: string) {
     return this.resenas.resumenSentimiento(slug);
   }

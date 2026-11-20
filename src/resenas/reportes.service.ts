@@ -102,7 +102,8 @@ export class ReportesService {
                 calificacion: true,
                 visitaId: true,
                 destino: { select: { nombre: true, slug: true } },
-                usuario: { select: { nombreCompleto: true } },
+                usuario: { select: { id: true, nombreCompleto: true } },
+                analisisRiesgo: { select: { modelo: true, puntajeModelo: true, puntajeReglas: true, senales: true, estado: true } },
               },
             },
           },
@@ -133,6 +134,7 @@ export class ReportesService {
       revisadosHoy,
       destinos,
       umbral: UMBRAL_RIESGO_RESENA,
+      actualizadoEn: new Date().toISOString(),
     };
   }
 

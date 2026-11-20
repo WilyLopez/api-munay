@@ -8,10 +8,12 @@ import { ResenasController } from './resenas.controller.js';
 import { ResenasService } from './resenas.service.js';
 import { ReportesController } from './reportes.controller.js';
 import { ReportesService } from './reportes.service.js';
+import { AnalisisRiesgoService } from './analisis-riesgo.service.js';
 
 @Module({
   imports: [AutenticacionModule, PrismaModule, PuntosModule, DestinosModule],
   controllers: [ResenasController, ReportesController],
-  providers: [ResenasService, ReportesService, RespuestasService],
+  providers: [ResenasService, ReportesService, RespuestasService, AnalisisRiesgoService],
+  exports: [AnalisisRiesgoService],
 })
 export class ResenasModule {}

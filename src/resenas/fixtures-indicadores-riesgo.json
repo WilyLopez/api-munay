@@ -1,0 +1,1043 @@
+[
+  {
+    "texto": "El ingreso a el museo del valle fue caro y no volvería.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.1,
+      0.023255813953488372,
+      0.09999999999999998,
+      0
+    ]
+  },
+  {
+    "texto": "Disfruté la colección de el museo del valle; el guía fue amable.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.12,
+      0.0196078431372549,
+      0.08333333333333337,
+      0
+    ]
+  },
+  {
+    "texto": "Visitamos el museo del valle por la mañana y salimos al mediodía.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.0625,
+      0.2,
+      0.11,
+      0.018867924528301886,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "En el museo del valle faltan rampas y señalización; deberían mejorar.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.1,
+      0.017543859649122806,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "El horario de el museo del valle está en https://museo.example/horarios .",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      0,
+      0,
+      0.0625,
+      0.2,
+      0.13,
+      0.017543859649122806,
+      0.15384615384615385,
+      0
+    ]
+  },
+  {
+    "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.6666666666666666,
+      0,
+      0,
+      0,
+      0.0,
+      0.15,
+      0.01282051282051282,
+      0.19999999999999996,
+      0
+    ]
+  },
+  {
+    "texto": "NO HAY SOMBRA EN el museo del valle, lleven agua y sombrero.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.11,
+      0.2765957446808511,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Buen lugar, el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.09090909090909091,
+      0.2,
+      0.06,
+      0.041666666666666664,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "En recepción de el museo del valle me indicaron el teléfono 999000000 para reservas.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.14,
+      0.01639344262295082,
+      0.0714285714285714,
+      1
+    ]
+  },
+  {
+    "texto": "Hicimos una excursión por varios sitios y el museo del valle fue la última parada.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.1111111111111111,
+      1.0,
+      0.14,
+      0.014925373134328358,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "La entrada de el museo del valle tiene descuento para estudiantes con carnet.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.13,
+      0.015625,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "No me gustó ver anuncios de compra ahora durante la visita a el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      1,
+      0,
+      0,
+      0.0,
+      0.15,
+      0.015625,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "El baño de el museo del valle estaba cerrado, pero el recorrido fue interesante.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.058823529411764705,
+      0.4,
+      0.14,
+      0.015384615384615385,
+      0.1428571428571429,
+      0
+    ]
+  },
+  {
+    "texto": "Encontramos una fila larga en el museo del valle; el personal nos orientó.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.058823529411764705,
+      0.2,
+      0.13,
+      0.016666666666666666,
+      0.07692307692307687,
+      0
+    ]
+  },
+  {
+    "texto": "Las salas de el museo del valle muestran cerámica y herramientas antiguas.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.0625,
+      0.6,
+      0.11,
+      0.016129032258064516,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Nos recomendaron escribir por whatsapp al local de el museo del valle para reservar.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0,
+      0.0,
+      0.14,
+      0.014285714285714285,
+      0.0,
+      1
+    ]
+  },
+  {
+    "texto": "La visita guiada fue por la mañana.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "La visita guiada fue por la mañana.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      0.2,
+      0.07,
+      0.03571428571428571,
+      0.1428571428571429,
+      0
+    ]
+  },
+  {
+    "texto": "En el museo del valle me ayudaron con la entrada, el mapa y el recorrido.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.06666666666666667,
+      0.8,
+      0.14,
+      0.017543859649122806,
+      0.1428571428571429,
+      0
+    ]
+  },
+  {
+    "texto": "Reservé por https://visita.example y disfruté el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      0,
+      0,
+      0.06666666666666667,
+      0.4,
+      0.1,
+      0.019230769230769232,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "MALO EL ACCESO A el museo del valle, PERO EL MUSEO VALE LA PENA.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.06666666666666667,
+      0.2,
+      0.13,
+      0.6938775510204082,
+      0.23076923076923073,
+      0
+    ]
+  },
+  {
+    "texto": "Excelente recorrido en el museo del valle, recomiendo repetirlo con toda la familia.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Excelente recorrido en el museo del valle, recomiendo repetirlo con toda la familia.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Excelente recorrido en el museo del valle, recomiendo repetirlo con toda la familia.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      0.4,
+      0.13,
+      0.014285714285714285,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Compra ahora en https://oferta.example y https://venta.example para el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.6666666666666666,
+      1,
+      0,
+      0.058823529411764705,
+      0.2,
+      0.14,
+      0.014705882352941176,
+      0.1428571428571429,
+      0
+    ]
+  },
+  {
+    "texto": "Oferta exclusiva de el museo del valle: https://promo.example escríbenos por whatsapp.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      1,
+      0,
+      0.05555555555555555,
+      0.6,
+      0.13,
+      0.014285714285714285,
+      0.0,
+      1
+    ]
+  },
+  {
+    "texto": "BUENO BUENO BUENO BUENO el museo del valle BUENO BUENO BUENO.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.125,
+      1.0,
+      0.11,
+      0.7,
+      0.5454545454545454,
+      0
+    ]
+  },
+  {
+    "texto": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      1.0,
+      0.14,
+      0.014285714285714285,
+      0.0714285714285714,
+      0
+    ]
+  },
+  {
+    "texto": "Descuento solo hoy en el museo del valle, entra en https://cupon.example y llama 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      1,
+      0,
+      0.05263157894736842,
+      0.4,
+      0.15,
+      0.015873015873015872,
+      0.06666666666666665,
+      1
+    ]
+  },
+  {
+    "texto": "Haz clic en https://premio.example para recibir una oferta exclusiva de el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.3333333333333333,
+      1,
+      0,
+      0,
+      0.0,
+      0.16,
+      0.0136986301369863,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      1.0,
+      0.09,
+      0.014285714285714285,
+      0.4444444444444444,
+      0
+    ]
+  },
+  {
+    "texto": "Gana dinero en https://dinero.example y https://bono.example desde el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "indicadores": [
+      0.6666666666666666,
+      0,
+      0,
+      0,
+      0.0,
+      0.14,
+      0.014925373134328358,
+      0.2142857142857143,
+      0
+    ]
+  },
+  {
+    "texto": "Servicio excelente en el museo del valle y experiencia perfecta para todos los visitantes.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Servicio excelente en el museo del valle y experiencia perfecta para todos los visitantes. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Servicio excelente en el museo del valle y experiencia perfecta para todos los visitantes. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Servicio excelente en el museo del valle y experiencia perfecta para todos los visitantes. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Servicio excelente en el museo del valle y experiencia perfecta para todos los visitantes. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.7647058823529411,
+      0.8,
+      0.13,
+      0.013157894736842105,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "CODIGO PROMOCIONAL el museo del valle https://regalo.example TELEGRAM 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      1,
+      0,
+      0.07142857142857142,
+      0.8,
+      0.11,
+      0.43103448275862066,
+      0.0,
+      1
+    ]
+  },
+  {
+    "texto": "COMPRa ahora https://tienda.example para el museo del valle, oferta exclusiva.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "COMPRa ahora https://tienda.example para el museo del valle, oferta exclusiva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.3333333333333333,
+      1,
+      1,
+      1.0,
+      0.2,
+      0.12,
+      0.07936507936507936,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "En el museo del valle todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.09090909090909091,
+      1.0,
+      0.15,
+      0.015873015873015872,
+      0.4666666666666667,
+      0
+    ]
+  },
+  {
+    "texto": "Miren https://a.example https://b.example https://c.example para el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "indicadores": [
+      1.0,
+      0,
+      0,
+      0.09090909090909091,
+      0.8,
+      0.12,
+      0.015873015873015872,
+      0.33333333333333337,
+      0
+    ]
+  },
+  {
+    "texto": "Visita perfecta en el museo del valle; gran atención, paisajes únicos y experiencia inolvidable.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Visita perfecta en el museo del valle; gran atención, paisajes únicos y experiencia inolvidable.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Visita perfecta en el museo del valle; gran atención, paisajes únicos y experiencia inolvidable.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Visita perfecta en el museo del valle; gran atención, paisajes únicos y experiencia inolvidable.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      0.6,
+      0.13,
+      0.0125,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Oferta exclusiva, compra ahora, el museo del valle: contacto por whatsapp 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      1,
+      0,
+      0.06666666666666667,
+      1.0,
+      0.12,
+      0.016666666666666666,
+      0.0,
+      1
+    ]
+  },
+  {
+    "texto": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Recomiendo el museo del valle, la atención fue buena y el recorrido agradable. Fue una visita reciente.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      0,
+      0.7857142857142857,
+      1.0,
+      0.12,
+      0.015625,
+      0.08333333333333337,
+      0
+    ]
+  },
+  {
+    "texto": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "PESIMO PESIMO PESIMO PESIMO el museo del valle PESIMO PESIMO.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      1.0,
+      0.1,
+      0.7058823529411765,
+      0.5,
+      0
+    ]
+  },
+  {
+    "texto": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      },
+      {
+        "comentario": "Todo perfecto y muy recomendable en el museo del valle; personal atento y visita excelente.",
+        "creadaEn": "2026-11-20T16:13:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.0,
+      0,
+      1,
+      1.0,
+      1.0,
+      0.13,
+      0.013333333333333334,
+      0.0,
+      0
+    ]
+  },
+  {
+    "texto": "Compra ahora una oferta exclusiva de el museo del valle en https://regalo.example https://envio.example.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      }
+    ],
+    "indicadores": [
+      0.6666666666666666,
+      1,
+      0,
+      0.15,
+      0.4,
+      0.17,
+      0.012048192771084338,
+      0.11764705882352944,
+      0
+    ]
+  }
+]

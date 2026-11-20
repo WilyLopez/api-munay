@@ -1,0 +1,68 @@
+{
+  "version": "riesgo-lr-piloto-v1-3bdbfe95e4eb",
+  "origen": "sintetico",
+  "clase_positiva": "revisar",
+  "indicadores": [
+    "enlaces",
+    "promocion",
+    "duplicado",
+    "similitud",
+    "frecuencia_hora",
+    "longitud",
+    "mayusculas",
+    "repeticion",
+    "contacto"
+  ],
+  "coeficientes": [
+    4.787667706147352,
+    2.8805144741437965,
+    0.18075447636281047,
+    3.133298890522057,
+    3.19041901730695,
+    0.5847581587259003,
+    1.4159545138813667,
+    1.1713964410800481,
+    0.6057669805417242
+  ],
+  "intercepto": -3.895081680068037,
+  "umbral": 70,
+  "evaluacion": {
+    "escenarios": 40,
+    "variantes": 120,
+    "entrenamiento": 96,
+    "prueba": 24,
+    "modelo": {
+      "exactitud": 0.875,
+      "precision_revisar": 1.0,
+      "recall_revisar": 0.75,
+      "f1_revisar": 0.8571428571428571,
+      "matriz": [
+        [
+          12,
+          0
+        ],
+        [
+          3,
+          9
+        ]
+      ]
+    },
+    "hibrido": {
+      "exactitud": 0.75,
+      "precision_revisar": 0.75,
+      "recall_revisar": 0.75,
+      "f1_revisar": 0.75,
+      "matriz": [
+        [
+          9,
+          3
+        ],
+        [
+          3,
+          9
+        ]
+      ]
+    }
+  },
+  "sha256_dataset": "3bdbfe95e4eb24e33721a5099cc62bbab10d35a69d58a4ef2a33036390da2500"
+}

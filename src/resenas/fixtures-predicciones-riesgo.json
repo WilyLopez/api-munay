@@ -1,0 +1,515 @@
+[
+  {
+    "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "etiqueta": 0,
+    "puntajeEsperado": 41
+  },
+  {
+    "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el bosque del norte.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "etiqueta": 0,
+    "puntajeEsperado": 39
+  },
+  {
+    "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el complejo cultural.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [],
+    "etiqueta": 0,
+    "puntajeEsperado": 39
+  },
+  {
+    "texto": "Buen lugar, el museo del valle.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 5
+  },
+  {
+    "texto": "Buen lugar, el bosque del norte.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 5
+  },
+  {
+    "texto": "Buen lugar, el complejo cultural.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 5
+  },
+  {
+    "texto": "Hicimos una excursión por varios sitios y el museo del valle fue la última parada.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 44
+  },
+  {
+    "texto": "Hicimos una excursión por varios sitios y el bosque del norte fue la última parada.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 44
+  },
+  {
+    "texto": "Hicimos una excursión por varios sitios y el complejo cultural fue la última parada.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 44
+  },
+  {
+    "texto": "MALO EL ACCESO A el museo del valle, PERO EL MUSEO VALE LA PENA.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 15
+  },
+  {
+    "texto": "MALO EL ACCESO A el bosque del norte, PERO EL MUSEO VALE LA PENA.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 14
+  },
+  {
+    "texto": "MALO EL ACCESO A el complejo cultural, PERO EL MUSEO VALE LA PENA.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      }
+    ],
+    "etiqueta": 0,
+    "puntajeEsperado": 14
+  },
+  {
+    "texto": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 94
+  },
+  {
+    "texto": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 94
+  },
+  {
+    "texto": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 94
+  },
+  {
+    "texto": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 96
+  },
+  {
+    "texto": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 96
+  },
+  {
+    "texto": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 96
+  },
+  {
+    "texto": "CODIGO PROMOCIONAL el museo del valle https://regalo.example TELEGRAM 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 99
+  },
+  {
+    "texto": "CODIGO PROMOCIONAL el bosque del norte https://regalo.example TELEGRAM 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 99
+  },
+  {
+    "texto": "CODIGO PROMOCIONAL el complejo cultural https://regalo.example TELEGRAM 999000000.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 99
+  },
+  {
+    "texto": "En el museo del valle todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 56
+  },
+  {
+    "texto": "En el bosque del norte todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 56
+  },
+  {
+    "texto": "En el complejo cultural todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+    "ahora": "2026-11-20T17:00:00+00:00",
+    "anteriores": [
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:55:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:48:00+00:00"
+      },
+      {
+        "comentario": "La playa estaba tranquila por la tarde.",
+        "creadaEn": "2026-11-20T16:41:00+00:00"
+      },
+      {
+        "comentario": "El estacionamiento estuvo disponible.",
+        "creadaEn": "2026-11-20T16:34:00+00:00"
+      },
+      {
+        "comentario": "El sendero tenía piedras y señalización nueva.",
+        "creadaEn": "2026-11-20T16:27:00+00:00"
+      },
+      {
+        "comentario": "Vimos una colección de tejidos en otra sala.",
+        "creadaEn": "2026-11-20T16:20:00+00:00"
+      }
+    ],
+    "etiqueta": 1,
+    "puntajeEsperado": 57
+  }
+]

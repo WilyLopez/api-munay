@@ -11,6 +11,7 @@ function preparar(encontrado: boolean) {
         .mockResolvedValue(encontrado ? { id: 'destino-id' } : null),
     },
     $queryRaw: vi.fn().mockResolvedValue([]),
+    visitaVerificada: { count: vi.fn().mockResolvedValue(0) },
     resena: {
       aggregate: vi
         .fn()
