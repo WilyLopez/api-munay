@@ -16,7 +16,11 @@ function preparar() {
   const tx = {
     $queryRaw: vi.fn(),
     respuestaResena: respuestas,
-    resena: { findFirst: vi.fn().mockResolvedValue({ id: 'resena' }) },
+    resena: {
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ id: 'resena', destino: { administradores: [] } }),
+    },
   };
   const servicio = new RespuestasService({
     cliente: {
@@ -28,7 +32,7 @@ function preparar() {
 }
 
 describe('Conversaciones de reseñas', () => {
-  it('no permite responder con una cuenta de encargado', async () => {
+  it('impide que un encargado responda reseñas ajenas', async () => {
     const { servicio, respuestas } = preparar();
     await expect(
       servicio.publicar(
@@ -37,8 +41,40 @@ describe('Conversaciones de reseñas', () => {
         'Gracias',
         id,
       ),
-    ).rejects.toThrow('cuenta de visitante');
+    ).rejects.toThrow('atractivo asignado');
     expect(respuestas.create).not.toHaveBeenCalled();
+  });
+
+  it('identifica como oficial la respuesta del encargado asignado', async () => {
+    const { servicio, respuestas, tx } = preparar();
+    tx.resena.findFirst.mockResolvedValue({
+      id: 'resena',
+      destino: { administradores: [{ usuarioId: 'encargado' }] },
+    });
+    await servicio.publicar(
+      'resena',
+      { id: 'encargado', rol: 'ADMIN_DESTINO' },
+      'Gracias por tu visita.',
+      id,
+    );
+    expect(respuestas.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          oficial: true,
+          usuarioId: 'encargado',
+        }),
+      }),
+    );
+  });
+
+  it('una respuesta de visitante nunca recibe la insignia oficial', async () => {
+    const { servicio, respuestas } = preparar();
+    await servicio.publicar('resena', perfil, 'Gracias', id);
+    expect(respuestas.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ oficial: false }),
+      }),
+    );
   });
 
   it('rechaza respuestas a reseñas retiradas', async () => {

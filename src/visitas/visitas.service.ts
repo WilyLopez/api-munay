@@ -224,38 +224,61 @@ export class VisitasService {
       creadaEn: { gte: desde, lte: ahora },
     };
     const cliente = this.prisma.cliente;
-    const [visitas, resumen, recientes] = await Promise.all([
-      cliente.$queryRaw<{ mes: string; total: number }[]>`
+    const [visitas, resumen, recientes, resenasPorMes, visitasConResena] =
+      await Promise.all([
+        cliente.$queryRaw<{ mes: string; total: number }[]>`
         SELECT to_char("verificada_en" AT TIME ZONE 'America/Lima', 'YYYY-MM') AS mes,
                count(*)::int AS total
         FROM "munay"."visitas_verificadas"
         WHERE "destino_id" = ${destino.id}::uuid AND "verificada_en" BETWEEN ${desde} AND ${ahora}
         GROUP BY 1
       `,
-      cliente.resena.aggregate({
-        where: filtroResenas,
-        _avg: { calificacion: true },
-        _count: { _all: true },
-      }),
-      cliente.resena.findMany({
-        where: filtroResenas,
-        select: {
-          id: true,
-          usuario: { select: { nombreCompleto: true } },
-          calificacion: true,
-          comentario: true,
-          creadaEn: true,
-          visitaId: true,
-        },
-        orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
-        take: 5,
-      }),
-    ]);
+        cliente.resena.aggregate({
+          where: filtroResenas,
+          _avg: { calificacion: true },
+          _count: { _all: true },
+        }),
+        cliente.resena.findMany({
+          where: filtroResenas,
+          select: {
+            id: true,
+            usuario: { select: { nombreCompleto: true } },
+            calificacion: true,
+            comentario: true,
+            creadaEn: true,
+            visitaId: true,
+            fotoUrl: true,
+            respuestas: {
+              where: { retiradaEn: null, oficial: true },
+              take: 1,
+              select: { id: true },
+            },
+            visita: { select: { verificadaEn: true } },
+            _count: { select: { respuestas: { where: { retiradaEn: null } } } },
+          },
+          orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
+          take: 5,
+        }),
+        cliente.$queryRaw<{ mes: string; total: number }[]>`
+        SELECT to_char("creada_en" AT TIME ZONE 'America/Lima', 'YYYY-MM') AS mes, count(*)::int AS total
+        FROM "munay"."resenas"
+        WHERE "destino_id" = ${destino.id}::uuid AND "retirada_en" IS NULL AND "creada_en" BETWEEN ${desde} AND ${ahora}
+        GROUP BY 1
+      `,
+        cliente.visitaVerificada.count({
+          where: {
+            destinoId: destino.id,
+            verificadaEn: { gte: desde, lte: ahora },
+            resena: { is: { retiradaEn: null, creadaEn: { lte: ahora } } },
+          },
+        }),
+      ]);
     const tendencia = periodos.map((fecha) => {
       const mes = fecha.toISOString().slice(0, 7);
       return {
         mes,
         total: visitas.find((visita) => visita.mes === mes)?.total ?? 0,
+        resenas: resenasPorMes.find((resena) => resena.mes === mes)?.total ?? 0,
       };
     });
     return {
@@ -266,10 +289,17 @@ export class VisitasService {
       ),
       totalResenas: resumen._count._all,
       promedio: resumen._avg.calificacion,
-      recientes: recientes.map(({ visitaId, ...resena }) => ({
-        ...resena,
-        verificada: Boolean(visitaId),
-      })),
+      visitasConResena,
+      desde,
+      recientes: recientes.map(
+        ({ visitaId, visita, _count, respuestas, ...resena }) => ({
+          ...resena,
+          verificada: Boolean(visitaId),
+          fechaVisita: visita?.verificadaEn ?? null,
+          totalRespuestas: _count.respuestas,
+          respuestaOficial: Boolean(respuestas.length),
+        }),
+      ),
       actualizadoEn: ahora,
     };
   }

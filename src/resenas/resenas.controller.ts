@@ -42,6 +42,12 @@ export class ResenasController {
     @Query('orden') orden?: string,
     @Query('pagina') pagina?: string,
     @Headers('authorization') autorizacion?: string,
+    @Query('estrellas') estrellas?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+    @Query('foto') foto?: string,
+    @Query('respuesta') respuesta?: string,
+    @Query('administracion') administracion?: string,
   ) {
     if (autorizacion) {
       res.setHeader('Cache-Control', 'private, no-store');
@@ -59,6 +65,7 @@ export class ResenasController {
       orden,
       pagina && /^[1-9]\d{0,4}$/.test(pagina) ? Number(pagina) : 1,
       sesion?.perfil,
+      { estrellas, desde, hasta, foto, respuesta, administracion },
     );
   }
 
