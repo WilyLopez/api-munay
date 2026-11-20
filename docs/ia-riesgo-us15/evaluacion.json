@@ -1,0 +1,324 @@
+{
+  "origen": "sintetico",
+  "sklearn": "1.9.1",
+  "escenarios": 40,
+  "variantes": 120,
+  "entrenamiento": 96,
+  "prueba": 24,
+  "grupos_entrenamiento": [
+    "escenario-01",
+    "escenario-02",
+    "escenario-03",
+    "escenario-04",
+    "escenario-05",
+    "escenario-07",
+    "escenario-09",
+    "escenario-11",
+    "escenario-12",
+    "escenario-13",
+    "escenario-14",
+    "escenario-15",
+    "escenario-16",
+    "escenario-17",
+    "escenario-18",
+    "escenario-19",
+    "escenario-21",
+    "escenario-22",
+    "escenario-23",
+    "escenario-24",
+    "escenario-26",
+    "escenario-27",
+    "escenario-29",
+    "escenario-30",
+    "escenario-32",
+    "escenario-34",
+    "escenario-35",
+    "escenario-36",
+    "escenario-37",
+    "escenario-38",
+    "escenario-39",
+    "escenario-40"
+  ],
+  "grupos_prueba": [
+    "escenario-06",
+    "escenario-08",
+    "escenario-10",
+    "escenario-20",
+    "escenario-25",
+    "escenario-28",
+    "escenario-31",
+    "escenario-33"
+  ],
+  "umbral": 70,
+  "regla_umbral": "puntaje redondeado > 70",
+  "orden_clases": [
+    "sin_indicios",
+    "revisar"
+  ],
+  "modelo": {
+    "exactitud": 0.875,
+    "precision_revisar": 1.0,
+    "recall_revisar": 0.75,
+    "f1_revisar": 0.8571428571428571,
+    "matriz": [
+      [
+        12,
+        0
+      ],
+      [
+        3,
+        9
+      ]
+    ]
+  },
+  "reglas": {
+    "exactitud": 0.75,
+    "precision_revisar": 0.75,
+    "recall_revisar": 0.75,
+    "f1_revisar": 0.75,
+    "matriz": [
+      [
+        9,
+        3
+      ],
+      [
+        3,
+        9
+      ]
+    ]
+  },
+  "hibrido": {
+    "exactitud": 0.75,
+    "precision_revisar": 0.75,
+    "recall_revisar": 0.75,
+    "f1_revisar": 0.75,
+    "matriz": [
+      [
+        9,
+        3
+      ],
+      [
+        3,
+        9
+      ]
+    ]
+  },
+  "base_mayoritaria": {
+    "exactitud": 0.5,
+    "precision_revisar": 0.0,
+    "recall_revisar": 0.0,
+    "f1_revisar": 0.0,
+    "matriz": [
+      [
+        12,
+        0
+      ],
+      [
+        12,
+        0
+      ]
+    ]
+  },
+  "sha256_dataset": "3bdbfe95e4eb24e33721a5099cc62bbab10d35a69d58a4ef2a33036390da2500",
+  "limitaciones": [
+    "Etiquetas ficticias por diseño, sin validación con usuarios reales.",
+    "Variantes de un escenario no son ejemplos independientes.",
+    "El índice no es una probabilidad calibrada de fraude.",
+    "No se detecta colusión ni se garantiza que una reseña sin alerta sea verdadera.",
+    "La comparación de políticas es exploratoria; falta una evaluación final independiente con datos reales."
+  ],
+  "casos_prueba": [
+    {
+      "grupo": "escenario-06",
+      "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el museo del valle.",
+      "esperada": 0,
+      "puntaje_modelo": 41,
+      "puntaje_reglas": 75,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-06",
+      "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el bosque del norte.",
+      "esperada": 0,
+      "puntaje_modelo": 39,
+      "puntaje_reglas": 75,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-06",
+      "texto": "Consulten https://museo.example y https://cultura.example para las entradas de el complejo cultural.",
+      "esperada": 0,
+      "puntaje_modelo": 39,
+      "puntaje_reglas": 75,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-08",
+      "texto": "Buen lugar, el museo del valle.",
+      "esperada": 0,
+      "puntaje_modelo": 5,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-08",
+      "texto": "Buen lugar, el bosque del norte.",
+      "esperada": 0,
+      "puntaje_modelo": 5,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-08",
+      "texto": "Buen lugar, el complejo cultural.",
+      "esperada": 0,
+      "puntaje_modelo": 5,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-10",
+      "texto": "Hicimos una excursión por varios sitios y el museo del valle fue la última parada.",
+      "esperada": 0,
+      "puntaje_modelo": 44,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-10",
+      "texto": "Hicimos una excursión por varios sitios y el bosque del norte fue la última parada.",
+      "esperada": 0,
+      "puntaje_modelo": 44,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-10",
+      "texto": "Hicimos una excursión por varios sitios y el complejo cultural fue la última parada.",
+      "esperada": 0,
+      "puntaje_modelo": 44,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-20",
+      "texto": "MALO EL ACCESO A el museo del valle, PERO EL MUSEO VALE LA PENA.",
+      "esperada": 0,
+      "puntaje_modelo": 15,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-20",
+      "texto": "MALO EL ACCESO A el bosque del norte, PERO EL MUSEO VALE LA PENA.",
+      "esperada": 0,
+      "puntaje_modelo": 14,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-20",
+      "texto": "MALO EL ACCESO A el complejo cultural, PERO EL MUSEO VALE LA PENA.",
+      "esperada": 0,
+      "puntaje_modelo": 14,
+      "puntaje_reglas": 0,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-25",
+      "texto": "El mejor paseo en el museo del valle, todo increíble y perfecto, lo recomiendo siempre.",
+      "esperada": 1,
+      "puntaje_modelo": 94,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-25",
+      "texto": "El mejor paseo en el bosque del norte, todo increíble y perfecto, lo recomiendo siempre.",
+      "esperada": 1,
+      "puntaje_modelo": 94,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-25",
+      "texto": "El mejor paseo en el complejo cultural, todo increíble y perfecto, lo recomiendo siempre.",
+      "esperada": 1,
+      "puntaje_modelo": 94,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-28",
+      "texto": "Maravilloso el museo del valle maravilloso maravilloso maravilloso maravilloso.",
+      "esperada": 1,
+      "puntaje_modelo": 96,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-28",
+      "texto": "Maravilloso el bosque del norte maravilloso maravilloso maravilloso maravilloso.",
+      "esperada": 1,
+      "puntaje_modelo": 96,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-28",
+      "texto": "Maravilloso el complejo cultural maravilloso maravilloso maravilloso maravilloso.",
+      "esperada": 1,
+      "puntaje_modelo": 96,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-31",
+      "texto": "CODIGO PROMOCIONAL el museo del valle https://regalo.example TELEGRAM 999000000.",
+      "esperada": 1,
+      "puntaje_modelo": 99,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-31",
+      "texto": "CODIGO PROMOCIONAL el bosque del norte https://regalo.example TELEGRAM 999000000.",
+      "esperada": 1,
+      "puntaje_modelo": 99,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-31",
+      "texto": "CODIGO PROMOCIONAL el complejo cultural https://regalo.example TELEGRAM 999000000.",
+      "esperada": 1,
+      "puntaje_modelo": 99,
+      "puntaje_reglas": 100,
+      "prediccion_hibrida": 1
+    },
+    {
+      "grupo": "escenario-33",
+      "texto": "En el museo del valle todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+      "esperada": 1,
+      "puntaje_modelo": 56,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-33",
+      "texto": "En el bosque del norte todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+      "esperada": 1,
+      "puntaje_modelo": 56,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    },
+    {
+      "grupo": "escenario-33",
+      "texto": "En el complejo cultural todo es bueno bueno bueno bueno bueno bueno bueno bueno.",
+      "esperada": 1,
+      "puntaje_modelo": 57,
+      "puntaje_reglas": 35,
+      "prediccion_hibrida": 0
+    }
+  ]
+}
