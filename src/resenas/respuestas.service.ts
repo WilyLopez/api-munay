@@ -12,6 +12,7 @@ const campos = {
   id: true,
   usuarioId: true,
   comentario: true,
+  oficial: true,
   creadaEn: true,
   usuario: { select: { nombreCompleto: true } },
 } as const;
@@ -21,13 +22,27 @@ export class RespuestasService {
   constructor(private readonly prisma: ServicioPrisma) {}
 
   async listar(resenaId: string, pagina: number, perfil?: PerfilResenas) {
+    const destino =
+      perfil?.rol === 'ADMIN_DESTINO'
+        ? {
+            OR: [
+              { estadoEditorial: 'publicada' },
+              { administradores: { some: { usuarioId: perfil.id } } },
+            ],
+          }
+        : { estadoEditorial: 'publicada' };
     const resena = await this.prisma.cliente.resena.findFirst({
       where: {
         id: resenaId,
         retiradaEn: null,
-        destino: { estadoEditorial: 'publicada' },
+        destino,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        destino: {
+          select: { administradores: { select: { usuarioId: true } } },
+        },
+      },
     });
     if (!resena)
       throw new NotFoundException('Esta reseña ya no está disponible.');
@@ -35,7 +50,7 @@ export class RespuestasService {
       where: {
         resenaId,
         retiradaEn: null,
-        resena: { retiradaEn: null, destino: { estadoEditorial: 'publicada' } },
+        resena: { retiradaEn: null, destino },
       },
       orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
       skip: (pagina - 1) * 10,
@@ -50,7 +65,12 @@ export class RespuestasService {
           propia: perfil?.id === usuarioId,
         })),
       hayMas: respuestas.length > 10,
-      puedeResponder: perfil?.rol === 'TURISTA',
+      puedeResponder:
+        perfil?.rol === 'TURISTA' ||
+        (perfil?.rol === 'ADMIN_DESTINO' &&
+          resena.destino.administradores.some(
+            (admin) => admin.usuarioId === perfil.id,
+          )),
     };
   }
 
@@ -60,8 +80,8 @@ export class RespuestasService {
     comentario: unknown,
     solicitudId: unknown,
   ) {
-    if (perfil.rol !== 'TURISTA')
-      throw new ForbiddenException('Responde con una cuenta de visitante.');
+    if (!['TURISTA', 'ADMIN_DESTINO'].includes(perfil.rol))
+      throw new ForbiddenException('Esta cuenta no puede responder reseñas.');
     const texto = typeof comentario === 'string' ? comentario.trim() : '';
     if (!texto || Array.from(texto).length > 1000)
       throw new BadRequestException(
@@ -80,12 +100,29 @@ export class RespuestasService {
         where: {
           id: resenaId,
           retiradaEn: null,
-          destino: { estadoEditorial: 'publicada' },
+          destino:
+            perfil.rol === 'ADMIN_DESTINO'
+              ? { administradores: { some: { usuarioId: perfil.id } } }
+              : { estadoEditorial: 'publicada' },
         },
-        select: { id: true },
+        select: {
+          id: true,
+          destino: {
+            select: { administradores: { select: { usuarioId: true } } },
+          },
+        },
       });
       if (!resena)
         throw new NotFoundException('Esta reseña ya no está disponible.');
+      if (
+        perfil.rol === 'ADMIN_DESTINO' &&
+        !resena.destino.administradores.some(
+          (admin) => admin.usuarioId === perfil.id,
+        )
+      )
+        throw new ForbiddenException(
+          'Solo puedes responder las reseñas de tu atractivo asignado.',
+        );
       await tx.$queryRaw`SELECT id FROM munay.usuarios WHERE id = ${perfil.id}::uuid FOR NO KEY UPDATE`;
       const anterior = await tx.respuestaResena.findUnique({
         where: { id: solicitudId },
@@ -116,6 +153,7 @@ export class RespuestasService {
           usuarioId: perfil.id,
           resenaId,
           comentario: texto,
+          oficial: perfil.rol === 'ADMIN_DESTINO',
         },
         select: { id: true },
       });

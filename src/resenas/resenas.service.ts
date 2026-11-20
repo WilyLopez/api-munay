@@ -14,6 +14,7 @@ import { PuntosService } from '../puntos/puntos.service.js';
 import { actualizarPromedioResenas } from './promedio-resenas.js';
 import { analizarSentimiento } from './sentimiento.js';
 import { evaluarRiesgoResena, UMBRAL_RIESGO_RESENA } from './riesgo-resena.js';
+import { alcanceAdministrador } from '../autenticacion/alcance-administrador.js';
 
 export type PerfilResenas = { id: string; rol: RolUsuario };
 const TAMANO_PAGINA = 20;
@@ -27,6 +28,11 @@ function seleccionarResena(usuarioId?: string) {
     visitaId: true,
     visita: { select: { verificadaEn: true } },
     fotoUrl: true,
+    respuestas: {
+      where: { retiradaEn: null, oficial: true },
+      take: 1,
+      select: { id: true },
+    },
     usuario: { select: { nombreCompleto: true } },
     destino: { select: { nombre: true, slug: true, imagenUrl: true } },
     anclaje: { select: { huella: true, estado: true, transaccion: true } },
@@ -45,6 +51,7 @@ function serializarResena({
   votos,
   anclaje,
   visita,
+  respuestas,
   ...fila
 }: Prisma.ResenaGetPayload<{ select: ReturnType<typeof seleccionarResena> }>) {
   return {
@@ -52,6 +59,7 @@ function serializarResena({
     verificada: Boolean(visitaId),
     fechaVisita: visita?.verificadaEn ?? null,
     totalRespuestas: _count.respuestas,
+    respuestaOficial: Boolean(respuestas?.length),
     utiles: _count.votos,
     votoPropio: Boolean(votos?.length),
     integridad:
@@ -149,20 +157,77 @@ export class ResenasService {
     orden: string | undefined,
     pagina: number,
     perfil?: PerfilResenas,
+    filtros: {
+      estrellas?: string;
+      desde?: string;
+      hasta?: string;
+      foto?: string;
+      respuesta?: string;
+      administracion?: string;
+    } = {},
   ) {
     const cliente = this.prisma.cliente;
+    const administrativo = filtros.administracion === '1';
+    if (
+      administrativo &&
+      (!perfil ||
+        !slug ||
+        !['ADMIN_DESTINO', 'SUPER_ADMIN'].includes(perfil.rol))
+    )
+      throw new ForbiddenException(
+        'Selecciona un atractivo autorizado para consultar sus reseñas.',
+      );
+    const alcance = administrativo
+      ? alcanceAdministrador(perfil!)
+      : { estadoEditorial: 'publicada' };
+    if (filtros.estrellas && !/^[1-5]$/.test(filtros.estrellas))
+      throw new BadRequestException('Selecciona una calificación entre 1 y 5.');
+    const fechaFiltro = (valor: string | undefined, fin: boolean) => {
+      if (!valor) return undefined;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(valor))
+        throw new BadRequestException('La fecha no es válida.');
+      const fecha = new Date(
+        `${valor}T${fin ? '23:59:59.999' : '00:00:00.000'}-05:00`,
+      );
+      if (
+        !Number.isFinite(fecha.getTime()) ||
+        new Date(`${valor}T00:00:00Z`).toISOString().slice(0, 10) !== valor
+      )
+        throw new BadRequestException('La fecha no es válida.');
+      return fecha;
+    };
+    const desde = fechaFiltro(filtros.desde, false);
+    const hasta = fechaFiltro(filtros.hasta, true);
+    if (desde && hasta && desde > hasta)
+      throw new BadRequestException(
+        'La fecha inicial debe ser anterior a la final.',
+      );
     const destino = slug
       ? await cliente.destino.findUnique({
-          where: { slug, estadoEditorial: 'publicada' },
+          where: { slug, AND: alcance },
           select: { id: true, nombre: true },
         })
       : null;
     if (slug && !destino)
       throw new NotFoundException('El destino no está disponible.');
-    const where = {
+    const where: Prisma.ResenaWhereInput = {
       retiradaEn: null,
-      destino: { estadoEditorial: 'publicada' },
+      destino: alcance,
       ...(destino && { destinoId: destino.id }),
+      ...(filtros.estrellas && { calificacion: Number(filtros.estrellas) }),
+      ...((desde || hasta) && {
+        creadaEn: {
+          ...(desde && { gte: desde }),
+          ...(hasta && { lte: hasta }),
+        },
+      }),
+      ...(filtros.foto === '1' && { fotoUrl: { not: null } }),
+      ...(filtros.respuesta === 'pendiente' && {
+        respuestas: { none: { retiradaEn: null, oficial: true } },
+      }),
+      ...(filtros.respuesta === 'respondida' && {
+        respuestas: { some: { retiradaEn: null, oficial: true } },
+      }),
     };
     const ordenFecha = [
       { creadaEn: 'desc' },
@@ -175,7 +240,9 @@ export class ResenasService {
         orderBy:
           orden === 'calificacion'
             ? [{ calificacion: 'desc' }, ...ordenFecha]
-            : ordenFecha,
+            : orden === 'menor'
+              ? [{ calificacion: 'asc' }, ...ordenFecha]
+              : ordenFecha,
         skip: (pagina - 1) * TAMANO_PAGINA,
         take: TAMANO_PAGINA + 1,
       }),

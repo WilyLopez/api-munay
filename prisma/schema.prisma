@@ -338,6 +338,7 @@ model RespuestaResena {
   resenaId   String   @map("resena_id") @db.Uuid
   usuarioId  String   @map("usuario_id") @db.Uuid
   comentario String
+  oficial    Boolean  @default(false)
   creadaEn   DateTime @default(now()) @map("creada_en") @db.Timestamptz(3)
   retiradaEn DateTime? @map("retirada_en") @db.Timestamptz(3)
   resena     Resena   @relation(fields: [resenaId], references: [id], onDelete: Cascade)

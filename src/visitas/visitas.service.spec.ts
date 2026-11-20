@@ -83,6 +83,7 @@ describe('Período de las estadísticas del atractivo', () => {
       };
       const cliente = {
         destino: { findFirst: vi.fn().mockResolvedValue(destino) },
+        visitaVerificada: { count: vi.fn().mockResolvedValue(1) },
         $queryRaw: vi.fn().mockResolvedValue([{ mes: '2026-10', total: 3 }]),
         resena: {
           aggregate: vi.fn().mockResolvedValue({
@@ -124,6 +125,14 @@ describe('Período de las estadísticas del atractivo', () => {
         totalVisitas: 3,
         totalResenas: 2,
         promedio: 4.5,
+        visitasConResena: 1,
+      });
+      expect(cliente.visitaVerificada.count).toHaveBeenCalledWith({
+        where: {
+          destinoId: destino.id,
+          verificadaEn: { gte: desde, lte: ahora },
+          resena: { is: { retiradaEn: null, creadaEn: { lte: ahora } } },
+        },
       });
     } finally {
       vi.useRealTimers();
