@@ -40,7 +40,10 @@ export class RespuestasService {
       select: {
         id: true,
         destino: {
-          select: { administradores: { select: { usuarioId: true } } },
+          select: {
+            nombre: true,
+            administradores: { select: { usuarioId: true } },
+          },
         },
       },
     });
@@ -55,18 +58,32 @@ export class RespuestasService {
       orderBy: [{ creadaEn: 'desc' }, { id: 'desc' }],
       skip: (pagina - 1) * 10,
       take: 11,
-      select: campos,
+      select: {
+        ...campos,
+        usuario: { select: { nombreCompleto: true, rol: true } },
+      },
     });
     return {
       respuestas: respuestas
         .slice(0, 10)
-        .map(({ usuarioId, ...respuesta }) => ({
-          ...respuesta,
-          propia: perfil?.id === usuarioId,
-        })),
+        .map(({ usuarioId, usuario, oficial, ...respuesta }) => {
+          const esOficial = oficial || usuario.rol === 'SUPER_ADMIN';
+          return {
+            ...respuesta,
+            oficial: esOficial,
+            usuario: {
+              nombreCompleto:
+                esOficial && resena.destino?.nombre
+                  ? resena.destino.nombre
+                  : usuario.nombreCompleto,
+            },
+            propia: perfil?.id === usuarioId,
+          };
+        }),
       hayMas: respuestas.length > 10,
       puedeResponder:
         perfil?.rol === 'TURISTA' ||
+        perfil?.rol === 'SUPER_ADMIN' ||
         (perfil?.rol === 'ADMIN_DESTINO' &&
           resena.destino.administradores.some(
             (admin) => admin.usuarioId === perfil.id,
@@ -80,7 +97,7 @@ export class RespuestasService {
     comentario: unknown,
     solicitudId: unknown,
   ) {
-    if (!['TURISTA', 'ADMIN_DESTINO'].includes(perfil.rol))
+    if (!['TURISTA', 'ADMIN_DESTINO', 'SUPER_ADMIN'].includes(perfil.rol))
       throw new ForbiddenException('Esta cuenta no puede responder reseñas.');
     const texto = typeof comentario === 'string' ? comentario.trim() : '';
     if (!texto || Array.from(texto).length > 1000)
@@ -103,7 +120,9 @@ export class RespuestasService {
           destino:
             perfil.rol === 'ADMIN_DESTINO'
               ? { administradores: { some: { usuarioId: perfil.id } } }
-              : { estadoEditorial: 'publicada' },
+              : perfil.rol === 'SUPER_ADMIN'
+                ? {}
+                : { estadoEditorial: 'publicada' },
         },
         select: {
           id: true,
@@ -153,7 +172,8 @@ export class RespuestasService {
           usuarioId: perfil.id,
           resenaId,
           comentario: texto,
-          oficial: perfil.rol === 'ADMIN_DESTINO',
+          oficial:
+            perfil.rol === 'ADMIN_DESTINO' || perfil.rol === 'SUPER_ADMIN',
         },
         select: { id: true },
       });
