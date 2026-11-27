@@ -58,6 +58,7 @@ function propuestaValida(valor: unknown) {
     nombre,
     descripcion,
     ubicacion,
+    distrito,
     categoria,
     provincia,
     latitud,
@@ -74,19 +75,25 @@ function propuestaValida(valor: unknown) {
   if (
     typeof latitud !== 'number' ||
     !Number.isFinite(latitud) ||
-    Math.abs(latitud) > 90 ||
+    latitud >= 0 ||
+    latitud < -18 ||
     typeof longitud !== 'number' ||
     !Number.isFinite(longitud) ||
-    Math.abs(longitud) > 180
+    longitud > -68 ||
+    longitud < -82
   ) {
     throw new BadRequestException(
-      'Ingresa coordenadas válidas para el atractivo.',
+      'Ingresa coordenadas geográficas válidas dentro del territorio peruano.',
     );
   }
   return {
     nombre: texto(nombre, 3, 120, 'El nombre'),
     descripcion: texto(descripcion, 20, 1000, 'La descripción'),
     ubicacion: texto(ubicacion, 4, 180, 'La ubicación'),
+    distrito:
+      typeof distrito === 'string' && distrito.trim().length >= 2
+        ? texto(distrito, 2, 100, 'El distrito')
+        : 'Lambayeque',
     categoria: categoria as CategoriaDestino,
     provincia: provincia as ProvinciaDestino,
     latitud,
@@ -305,6 +312,35 @@ export class AccesosService {
     const venceEn = new Date(Date.now() + 72 * 60 * 60 * 1000);
     const destino = await this.transaccion(async (tx) => {
       await this.confirmarSuperAdmin(tx, actorId);
+      const accesoAprobado = await tx.accesoEncargado.findFirst({
+        where: { correo, estado: 'aprobada', usuarioId: { not: null } },
+        select: { usuarioId: true },
+      });
+      if (accesoAprobado?.usuarioId) {
+        const usuarioExistente = await tx.usuario.findUnique({
+          where: { id: accesoAprobado.usuarioId },
+          select: { id: true, rol: true, activo: true },
+        });
+        if (usuarioExistente?.rol === 'SUPER_ADMIN') {
+          throw new BadRequestException(
+            'Este correo pertenece a una cuenta SuperAdmin y no puede ser asignado como encargado.',
+          );
+        }
+        if (usuarioExistente) {
+          const destinoAsignado = await tx.administradorDestino.findUnique({
+            where: { usuarioId: usuarioExistente.id },
+            include: { destino: { select: { nombre: true } } },
+          });
+          if (
+            destinoAsignado &&
+            (!destinoId || destinoAsignado.destinoId !== destinoId)
+          ) {
+            throw new ConflictException(
+              `Este usuario ya administra el atractivo "${destinoAsignado.destino.nombre}". Retira su asignación previa antes de invitarlo a otro.`,
+            );
+          }
+        }
+      }
       const lugar = destinoId
         ? await tx.destino.findUnique({
             where: { id: destinoId },
@@ -505,13 +541,13 @@ export class AccesosService {
             'El destino de esta invitación ya no está disponible.',
           );
         const datos = propuestaValida(propuesta);
-        const { distrito } = propuesta as Record<string, unknown>;
+        const { distrito, ...datosDestino } = datos;
         const destino = await tx.destino.create({
           data: {
-            ...datos,
+            ...datosDestino,
             slug: slugNuevo(datos.nombre),
             estadoEditorial: 'borrador',
-            informacion: { distrito: texto(distrito, 2, 100, 'El distrito') },
+            informacion: { distrito },
           },
           select: { id: true },
         });
@@ -570,11 +606,13 @@ export class AccesosService {
           );
         if (!destinoId && fila.propuesta) {
           const datos = propuestaValida(fila.propuesta);
+          const { distrito, ...datosDestino } = datos;
           const destino = await tx.destino.create({
             data: {
-              ...datos,
+              ...datosDestino,
               slug: slugNuevo(datos.nombre),
               estadoEditorial: 'borrador',
+              informacion: { distrito },
             },
             select: { id: true },
           });
