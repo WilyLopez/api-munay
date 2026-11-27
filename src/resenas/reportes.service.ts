@@ -23,10 +23,11 @@ export class ReportesService {
 
   async reportar(id: string, perfil: PerfilConRol, motivo: unknown) {
     const alcance = alcanceAdministrador(perfil);
-    const texto = typeof motivo === 'string' ? motivo.trim() : '';
-    if (texto.length < 10 || texto.length > 500) {
+    const texto =
+      typeof motivo === 'string' ? motivo.replace(/\0/g, '').trim() : '';
+    if (texto.length < 10 || texto.length > 600) {
       throw new BadRequestException(
-        'Describe el motivo con entre 10 y 500 caracteres.',
+        'Describe el motivo con entre 10 y 600 caracteres.',
       );
     }
     const total = await this.prisma.cliente.$executeRaw`
@@ -150,10 +151,11 @@ export class ReportesService {
         'Elige si deseas mantener o retirar la reseña.',
       );
     }
-    const texto = typeof motivo === 'string' ? motivo.trim() : '';
-    if (decision === 'retirar' && (texto.length < 10 || texto.length > 500)) {
+    const texto =
+      typeof motivo === 'string' ? motivo.replace(/\0/g, '').trim() : '';
+    if (decision === 'retirar' && (texto.length < 10 || texto.length > 600)) {
       throw new BadRequestException(
-        'Escribe un motivo de retiro de 10 a 500 caracteres.',
+        'Escribe un motivo de retiro de 10 a 600 caracteres.',
       );
     }
     await this.prisma.cliente.$transaction(
